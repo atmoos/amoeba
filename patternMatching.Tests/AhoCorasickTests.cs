@@ -39,6 +39,15 @@ namespace patternMatching.Tests
         }
 
         [Fact]
+        public void TrieMatchesEachOccurrenceOnce()
+        {
+            var trie = Trie("Fliegen");
+
+            var match = trie.Search("Wenn Fliegen hinter Fliegen fliegen, fliegen Fliegen Fliegen nach!");
+
+            Assert.Equal(Result("Fliegen", "Fliegen", "Fliegen", "Fliegen"), match);
+        }
+        [Fact]
         public void TrieMatchesTwoSeparatedPatterns()
         {
             var trie = Trie("lee", "luv");

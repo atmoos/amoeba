@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace patternMatching
@@ -10,7 +11,6 @@ namespace patternMatching
 
         public void Add(String pattern)
         {
-            // Build the trie along the column;
             var next = this.trieRoot;
             foreach(var letter in pattern) {
                 next = next.Add(letter, this.trieRoot);
@@ -18,7 +18,7 @@ namespace patternMatching
             next.Pattern = pattern;
         }
 
-        public ITrie<Char, String> Build() => new Trie(Node.Reduce(this.trieRoot));
+        public ITrie<Char, String> Build() => new Trie(Node.Compile(this.trieRoot));
 
         private sealed class Trie : ITrie<Char, String>
         {
@@ -27,29 +27,22 @@ namespace patternMatching
 
             public IEnumerable<String> Search(String input)
             {
-                var parent = this.root;
+                var next = this.root;
                 foreach(Char c in input) {
-                    var child = parent.Next(c);
-                    if(child != null) {
-                        parent = child;
-                        if(parent.Pattern != null) {
-                            yield return parent.Pattern;
-                        }
-                        var temp = parent.Output;
-                        while(temp?.Pattern != null) {
-                            yield return temp.Pattern;
-                            temp = temp.Output;
-                        }
-                        continue;
+                    Node child = null;
+                    while((child = next.Next(c)) == null && next != this.root) {
+                        next = next.Suffix;
                     }
-                    while(parent != this.root && parent.Next(c) == null) {
-                        parent = parent.Suffix;
+
+                    next = child ?? this.root;
+                    foreach(var pattern in next) {
+                        yield return pattern;
                     }
                 }
             }
         }
 
-        private sealed class Node
+        private sealed class Node : IEnumerable<String>
         {
             private readonly IDictionary<Char, Node> children = new Dictionary<Char, Node>();
 
@@ -85,30 +78,37 @@ namespace patternMatching
             }
 
             public static Node Root() => new Node();
-            public static Node Reduce(Node root)
+            public static Node Compile(Node root)
             {
-                var top = root;
                 var nodes = new Queue<Node>(root.children.Values);
 
                 while(nodes.TryDequeue(out var current)) {
                     foreach(var child in current.children.Values) {
                         var temp = current.Suffix;
-                        while(temp.Next(child.Letter) == null && temp != root) {
+                        while(temp != root && temp.Next(child.Letter) == null) {
                             temp = temp.Suffix;
                         }
-                        var suffix = temp.Next(child.Letter);
-                        child.Suffix = suffix ?? root;
+                        child.Suffix = temp.Next(child.Letter) ?? root;
                         nodes.Enqueue(child);
                     }
-
-                    if(current.Suffix != root) {
-                        current.Output = current.Suffix;
-                        continue;
-                    }
-                    current.Output = current.Suffix.Output;
+                    current.Output = current.Suffix == root ? current.Suffix.Output : current.Suffix;
                 }
                 return root;
             }
+
+            public IEnumerator<string> GetEnumerator()
+            {
+                if(Pattern != null) {
+                    yield return Pattern;
+                }
+                var temp = Output;
+                while(temp?.Pattern != null) {
+                    yield return temp.Pattern;
+                    temp = temp.Output;
+                }
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         }
     }
 }
