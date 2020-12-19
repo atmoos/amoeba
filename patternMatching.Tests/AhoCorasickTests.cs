@@ -19,27 +19,27 @@ namespace patternMatching.Tests
         }
 
         [Fact]
-        public void TrieMatchesOneOccurrence()
+        public void TrieMatchesOneOccurrenceInTheCenter()
         {
-            var trie = DefaultTrie();
+            var trie = Trie("ab");
 
-            var match = trie.Search("halitops");
+            var match = trie.Search("The ablative");
 
-            Assert.Equal(Result("i"), match);
+            Assert.Equal(Result("ab"), match);
         }
 
         [Fact]
-        public void TrieMatchesTwoOccurrencesOnlyOnce()
+        public void TrieMatchesOneOccurrenceAtTheEnd()
         {
-            var trie = DefaultTrie();
+            var trie = Trie("act");
 
-            var match = trie.Search("halligalli");
+            var match = trie.Search("The abstract");
 
-            Assert.Equal(Result("i"), match);
+            Assert.Equal(Result("act"), match);
         }
 
         [Fact]
-        public void TrieMatchesTwoSeparatedPatternsDistinctly()
+        public void TrieMatchesTwoSeparatedPatterns()
         {
             var trie = Trie("lee", "luv");
 
@@ -49,7 +49,7 @@ namespace patternMatching.Tests
         }
 
         [Fact]
-        public void TrieMatchesAdjacentSuffixPatternsDistinctly()
+        public void TrieMatchesAdjacentSuffixPatterns()
         {
             var trie = Trie("lee", "leeward");
 
@@ -59,7 +59,17 @@ namespace patternMatching.Tests
         }
 
         [Fact]
-        public void TrieMatchesOverlappingSuffixPatternsDistinctly()
+        public void TrieMatchesAdjacentPostfixPatterns()
+        {
+            var trie = Trie("ward", "leeward");
+
+            var match = trie.Search("turn leeward!");
+
+            Assert.Equal(Result("leeward", "ward"), match);
+        }
+
+        [Fact]
+        public void TrieMatchesOverlappingSuffixPatterns()
         {
             var trie = Trie("ton", "pontons");
 
