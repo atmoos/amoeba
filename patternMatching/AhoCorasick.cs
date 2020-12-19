@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -45,20 +46,12 @@ namespace patternMatching
 
         private sealed class Node : IEnumerable<String>
         {
+            private Node output;
             private readonly IDictionary<Char, Node> children = new Dictionary<Char, Node>();
-
-            // Red
-            public Node Suffix { get; set; }
-
-            // Blue
-            public Node Output { get; set; }
-
             public Char Letter { get; }
             public String Pattern { get; set; }
-            private Node()
-            {
-                Suffix = Output = this; // mark as root
-            }
+            public Node Suffix { get; private set; }
+            private Node() { }
 
             private Node(Char letter, Node root)
             {
@@ -66,7 +59,6 @@ namespace patternMatching
                 Suffix = root;
             }
 
-            // Why not return the longest suffix here?
             public Node Next(Char letter) => this.children.TryGetValue(letter, out var match) ? match : null;
 
             public Node Add(Char letter, Node root)
@@ -74,10 +66,30 @@ namespace patternMatching
                 if(this.children.TryGetValue(letter, out var child)) {
                     return child;
                 }
-
                 return this.children[letter] = new Node(letter, root);
             }
 
+            public void SetSuffix(Node suffix, Node root)
+            {
+                this.Suffix = suffix ?? root;
+                if(suffix != null && suffix != root) {
+                    this.output = Suffix;
+                }
+            }
+
+            public IEnumerator<string> GetEnumerator()
+            {
+                if(Pattern != null) {
+                    yield return Pattern;
+                }
+                var temp = this.output;
+                while(temp?.Pattern != null) {
+                    yield return temp.Pattern;
+                    temp = temp.output;
+                }
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
             public static Node Root() => new Node();
             public static Node Compile(Node root)
             {
@@ -89,27 +101,12 @@ namespace patternMatching
                         while(temp != root && temp.Next(child.Letter) == null) {
                             temp = temp.Suffix;
                         }
-                        child.Suffix = temp.Next(child.Letter) ?? root;
+                        child.SetSuffix(temp.Next(child.Letter), root);
                         nodes.Enqueue(child);
                     }
-                    current.Output = current.Suffix == root ? current.Suffix.Output : current.Suffix;
                 }
                 return root;
             }
-
-            public IEnumerator<string> GetEnumerator()
-            {
-                if(Pattern != null) {
-                    yield return Pattern;
-                }
-                var temp = Output;
-                while(temp?.Pattern != null) {
-                    yield return temp.Pattern;
-                    temp = temp.Output;
-                }
-            }
-
-            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         }
     }
 }
