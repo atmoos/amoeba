@@ -97,7 +97,16 @@ namespace patternMatching.Tests
             Assert.Equal(Result("five", "six", "seven", "eight"), match);
         }
 
-        private static ITrie<Char, String> DefaultTrie() => Trie("i", "in", "tin", "sting");
+        [Fact]
+        public void InterleavedPatternsAreResolved()
+        {
+            var trie = Trie("in", "tin", "sting");
+
+            var match = trie.Search("a tin in a stinger");
+
+            Assert.Equal(Result("tin", "in", "in", "tin", "in", "sting"), match);
+        }
+
         private static ITrie<Char, String> Trie(params String[] patterns)
         {
             var builder = new AhoCorasick();

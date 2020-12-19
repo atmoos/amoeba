@@ -4,7 +4,8 @@ using System.Collections.Generic;
 
 namespace patternMatching
 {
-    // This implementation follow
+    // This implementation follows the following tutorial:
+    // https://iq.opengenus.org/aho-corasick-algorithm/
     public sealed class AhoCorasick : ITrieBuilder<Char, String>
     {
         private readonly Node trieRoot = Node.Root();
