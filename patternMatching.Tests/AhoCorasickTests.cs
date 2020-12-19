@@ -112,8 +112,8 @@ namespace patternMatching.Tests
         [Fact]
         public void AhoCorasickIsFasterThanNaiveApproach()
         {
-            var warmup = TimeMatching(20, 200);
-            var run = TimeMatching(60, 5000);
+            var warmup = TimeMatching(20, 800);
+            var run = TimeMatching(40, 8000);
             Assert.True(run.naive > run.aho);
             Assert.NotEqual(warmup, run);
         }
@@ -131,8 +131,9 @@ namespace patternMatching.Tests
 
         private static (TimeSpan naive, TimeSpan aho) TimeMatching(Int32 dictSize, Int32 textSize)
         {
-            var text = CreateText(textSize);
-            var dictionary = Enumerable.Range(11, dictSize + 11).Select(i => i.ToString()).ToArray();
+            var rand = new Random(dictSize);
+            var text = CreateText(rand, textSize);
+            var dictionary = Enumerable.Range(0, dictSize).Select(_ => rand.Next(dictSize, textSize).ToString()).ToArray();
             var trie = Trie(dictionary);
 
             var timer = Stopwatch.StartNew();
@@ -144,20 +145,20 @@ namespace patternMatching.Tests
             timer.Restart();
             var naiveMatches = new HashSet<String>();
             foreach(var pattern in dictionary) {
-                var match = new List<List<Char>>();
+                var match = new HashSet<StringBuilder>(pattern.Length);
                 foreach(var letter in text) {
-                    var remove = new HashSet<List<Char>>();
+                    StringBuilder remove = null;
                     foreach(var m in match) {
-                        m.Add(letter);
-                        if(m.Count >= pattern.Length) {
-                            if(m.Aggregate(new StringBuilder(), (b, c) => b.Append(c)).ToString() == pattern) {
+                        m.Append(letter);
+                        if(m.Length >= pattern.Length) {
+                            if(m.ToString() == pattern) {
                                 naiveMatches.Add(pattern);
                             }
-                            remove.Add(m);
+                            remove = m;
                         }
                     }
-                    match.RemoveAll(m => remove.Contains(m));
-                    match.Add(new List<Char> { letter });
+                    match.Remove(remove);
+                    match.Add(new StringBuilder(letter));
                 }
             }
             var naiveTiming = timer.Elapsed;
@@ -166,17 +167,20 @@ namespace patternMatching.Tests
             return (naiveTiming, trieTiming);
         }
 
-        private static String CreateText(int inputSize)
+        private static String CreateText(Random rand, int inputSize)
         {
-            const Int32 scale = 10;
+            const Int32 scale = 23;
             var text = new StringBuilder();
-            var rand = new Random(inputSize);
             var maxInteger = scale * inputSize;
             for(Int32 i = 0; i < inputSize; i++) {
                 var next = rand.Next(10, maxInteger);
                 text.Append(next);
-                if(next / scale == inputSize) {
+                if(next % 7 == 0) {
                     text.Append(" ");
+                    continue;
+                }
+                if(next % 53 == 0) {
+                    text.Append(". ");
                 }
             }
             return text.ToString();

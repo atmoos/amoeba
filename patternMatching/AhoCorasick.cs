@@ -73,7 +73,7 @@ namespace patternMatching
             {
                 this.Suffix = suffix ?? root;
                 if(suffix != null && suffix != root) {
-                    this.output = Suffix;
+                    this.output = suffix;
                 }
             }
 
