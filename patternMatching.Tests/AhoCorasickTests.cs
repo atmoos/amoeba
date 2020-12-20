@@ -109,6 +109,19 @@ namespace patternMatching.Tests
         }
 
         [Fact]
+        public void IndexesInSourceStringAreFound()
+        {
+            const String sourceString = "a tin in a stinger";
+            var trie = SearchFor("in", "tin", "sting");
+
+            var match = trie.SearchForStartIndices(sourceString, m => (UInt64)m.Length);
+
+            foreach(var (position, segment) in match) {
+                Assert.Equal(segment, sourceString.Substring((Int32)position, segment.Length));
+            }
+        }
+
+        [Fact]
         public void AhoCorasickIsFasterThanNaiveApproach()
         {
             var warmup = TimeMatching(20, 800);
