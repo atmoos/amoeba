@@ -6,30 +6,30 @@ namespace patternMatching
 {
     // This implementation follows the following tutorial:
     // https://iq.opengenus.org/aho-corasick-algorithm/
-    public sealed class AhoCorasick : ISearchBuilder<Char, String>
+    public sealed class AhoCorasick<TAlphabet, TOnMatch> : ISearchBuilder<TAlphabet, TOnMatch>
     {
         private readonly Node trieRoot = Node.Root();
-        public void Add(String pattern)
+        public void Add(IEnumerable<TAlphabet> pattern, TOnMatch onMatch)
         {
             var next = this.trieRoot;
             foreach(var letter in pattern) {
                 next = next.Add(letter, this.trieRoot);
             }
-            next.Pattern = pattern;
+            next.Match = onMatch;
         }
-        public ISearch<Char, String> Build() => new TrieSearch(Node.Compile(this.trieRoot));
+        public ISearch<TAlphabet, TOnMatch> Build() => new TrieSearch(Node.Compile(this.trieRoot));
 
-        private sealed class TrieSearch : ISearch<Char, String>
+        private sealed class TrieSearch : ISearch<TAlphabet, TOnMatch>
         {
             private readonly Node root;
             public TrieSearch(Node root) => this.root = root;
 
-            public IEnumerable<String> Search(String input)
+            public IEnumerable<TOnMatch> Search(IEnumerable<TAlphabet> input)
             {
                 var next = this.root;
-                foreach(Char c in input) {
+                foreach(TAlphabet letter in input) {
                     Node child = null;
-                    while((child = next.Next(c)) == null && next != this.root) {
+                    while((child = next.Next(letter)) == null && next != this.root) {
                         next = next.Suffix;
                     }
                     next = child ?? this.root;
@@ -40,22 +40,31 @@ namespace patternMatching
             }
         }
 
-        private sealed class Node : IEnumerable<String>
+        private sealed class Node : IEnumerable<TOnMatch>
         {
             private Node output;
-            private readonly IDictionary<Char, Node> children = new Dictionary<Char, Node>();
-            public Char Letter { get; }
-            public String Pattern { get; set; }
+            private TOnMatch match;
+            private Boolean hasMatch;
+            private readonly IDictionary<TAlphabet, Node> children = new Dictionary<TAlphabet, Node>();
+            public TAlphabet Letter { get; }
+            public TOnMatch Match {
+                get => match;
+                set
+                {
+                    this.hasMatch = true;
+                    this.match = value;
+                }
+            }
             public Node Suffix { get; private set; }
             private Node() { }
 
-            private Node(Char letter, Node root)
+            private Node(TAlphabet letter, Node root)
             {
                 Letter = letter;
                 Suffix = root;
             }
-            public Node Next(Char letter) => this.children.TryGetValue(letter, out var match) ? match : null;
-            public Node Add(Char letter, Node root)
+            public Node Next(TAlphabet letter) => this.children.TryGetValue(letter, out var match) ? match : null;
+            public Node Add(TAlphabet letter, Node root)
             {
                 if(this.children.TryGetValue(letter, out var child)) {
                     return child;
@@ -70,14 +79,16 @@ namespace patternMatching
                 }
             }
 
-            public IEnumerator<string> GetEnumerator()
+            public IEnumerator<TOnMatch> GetEnumerator()
             {
-                if(Pattern != null) {
-                    yield return Pattern;
+                if(this.hasMatch) {
+                    yield return Match;
                 }
                 var temp = this.output;
-                while(temp?.Pattern != null) {
-                    yield return temp.Pattern;
+                while(temp != null) {
+                    if(temp.hasMatch) {
+                        yield return temp.Match;
+                    }
                     temp = temp.output;
                 }
             }

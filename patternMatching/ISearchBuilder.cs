@@ -4,11 +4,10 @@ using System.Collections.Generic;
 
 namespace patternMatching
 {
-    public interface ISearchBuilder<TAlphabet, TEval> : IEnumerable
-        where TEval : IEnumerable<TAlphabet>
+    public interface ISearchBuilder<TAlphabet, TOnMatch> : IEnumerable
     {
-        void Add(TEval pattern);
-        ISearch<TAlphabet, TEval> Build();
+        void Add(IEnumerable<TAlphabet> pattern, TOnMatch match);
+        ISearch<TAlphabet, TOnMatch> Build();
 
         IEnumerator IEnumerable.GetEnumerator() => throw new InvalidOperationException("Never use a builder in a foreach loop or similar.");
     }

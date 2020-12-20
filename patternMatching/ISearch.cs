@@ -3,9 +3,8 @@ using System.Collections.Generic;
 
 namespace patternMatching
 {
-    public interface ISearch<TAlphabet, TEval>
-        where TEval : IEnumerable<TAlphabet>
+    public interface ISearch<TAlphabet, TSearchOutput>
     {
-        IEnumerable<TEval> Search(TEval input);
+        IEnumerable<TSearchOutput> Search(IEnumerable<TAlphabet> input);
     }
 }

@@ -117,7 +117,7 @@ namespace patternMatching.Tests
             Assert.NotEqual(warmup, run);
         }
 
-        private static ISearch<Char, String> SearchFor(params String[] patterns) => new AhoCorasick { patterns }.Build();
+        private static ISearch<Char, String> SearchFor(params String[] patterns) => new AhoCorasick<Char, String> { patterns }.Build();
 
         private static IEnumerable<String> Result(params String[] result) => result;
 
@@ -127,12 +127,12 @@ namespace patternMatching.Tests
             var text = CreateText(rand, textSize);
             var dictionary = Enumerable.Range(0, dictSize).Select(_ => rand.Next(dictSize, textSize).ToString()).ToArray();
             var trie = SearchFor(dictionary);
-            var naive = new Naive.MultiPatternSearch { dictionary }.Build();
+            var naive = new Naive.MultiPatternSearch<Char, String> { dictionary }.Build();
 
             var timer = Stopwatch.StartNew();
             var trieMatches = trie.Search(text).ToHashSet();
             var trieTiming = timer.Elapsed;
-            Console.WriteLine($"Search search: {trieTiming:g}");
+            Console.WriteLine($"Aho-C search: {trieTiming:g}");
 
             timer.Restart();
             var naiveMatches = naive.Search(text).ToHashSet();

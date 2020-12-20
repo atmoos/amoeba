@@ -1,40 +1,43 @@
 using System;
 using System.Linq;
-using System.Text;
 using System.Collections.Generic;
 
 namespace patternMatching.Naive
 {
-    public sealed class MultiPatternSearch : ISearchBuilder<Char, String>
+    public sealed class MultiPatternSearch<TAlphabet, TMatch> : ISearchBuilder<TAlphabet, TMatch>
     {
-        private readonly List<String> dictionary = new List<String>();
-        public void Add(String pattern) => this.dictionary.Add(pattern);
+        private readonly List<(IEnumerable<TAlphabet>, TMatch)> dictionary = new List<(IEnumerable<TAlphabet>, TMatch)>();
+        public void Add(IEnumerable<TAlphabet> pattern, TMatch match) => this.dictionary.Add((pattern, match));
 
-        public ISearch<Char, String> Build() => new NaiveSearch(this.dictionary);
+        public ISearch<TAlphabet, TMatch> Build() => new NaiveSearch(this.dictionary.Select(Build));
 
-        private sealed class NaiveSearch : ISearch<Char, String>
+        private static (List<TAlphabet>, TMatch match) Build((IEnumerable<TAlphabet> p, TMatch m) value) => (value.p.ToList(), value.m);
+
+        private sealed class NaiveSearch : ISearch<TAlphabet, TMatch>
         {
-            private readonly List<String> dictionary;
+            private readonly List<(List<TAlphabet> pattern, TMatch match)> dictionary;
 
-            public NaiveSearch(List<String> dictionary) => this.dictionary = new List<String>(dictionary.Distinct());
-
-            public IEnumerable<String> Search(String input)
+            public NaiveSearch(IEnumerable<(List<TAlphabet>, TMatch)> dictionary)
             {
-                foreach(var pattern in this.dictionary) {
-                    var match = new HashSet<StringBuilder>(pattern.Length);
+                this.dictionary = new List<(List<TAlphabet> pattern, TMatch match)>(dictionary);
+            }
+            public IEnumerable<TMatch> Search(IEnumerable<TAlphabet> input)
+            {
+                foreach(var (pattern, match) in this.dictionary) {
+                    var comparators = new HashSet<List<TAlphabet>>();
                     foreach(var letter in input) {
-                        StringBuilder remove = null;
-                        foreach(var m in match) {
-                            m.Append(letter);
-                            if(m.Length >= pattern.Length) {
-                                if(m.ToString() == pattern) {
-                                    yield return pattern;
+                        List<TAlphabet> remove = null;
+                        foreach(var comparator in comparators) {
+                            comparator.Add(letter);
+                            if(comparator.Count >= pattern.Count) {
+                                if(comparator.SequenceEqual(pattern)) {
+                                    yield return match;
                                 }
-                                remove = m;
+                                remove = comparator;
                             }
                         }
-                        match.Remove(remove);
-                        match.Add(new StringBuilder(letter));
+                        comparators.Remove(remove);
+                        comparators.Add(new List<TAlphabet> { letter });
                     }
                 }
             }
