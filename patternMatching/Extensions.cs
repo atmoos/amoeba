@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Collections.Generic;
 
@@ -28,6 +29,22 @@ namespace patternMatching
                 foreach(var match in search.Search(input)) {
                     yield return match;
                 }
+            }
+        }
+        public static IEnumerable<(UInt64 position, TSearchOutput match)> IndexSearch<TAlphabet, TText, TSearchOutput>(this ISearch<TAlphabet, TSearchOutput> search, TText inputStream)
+            where TText : IEnumerable<TAlphabet>
+        {
+            UInt64 position = 0;
+            IEnumerable<TAlphabet> TrackPosition(TText source)
+            {
+                foreach(var character in source) {
+                    yield return character;
+                    position++;
+                }
+            }
+
+            foreach(var match in search.Search(TrackPosition(inputStream))) {
+                yield return (position, match);
             }
         }
     }
