@@ -21,7 +21,8 @@ namespace patternMatching.Naive
             {
                 this.dictionary = new List<(List<TAlphabet> pattern, TMatch match)>(dictionary);
             }
-            public IEnumerable<TMatch> Search(IEnumerable<TAlphabet> input)
+            public IEnumerable<TMatch> Search<TText>(TText input)
+                where TText : IEnumerable<TAlphabet>
             {
                 foreach(var (pattern, match) in this.dictionary) {
                     var comparators = new HashSet<List<TAlphabet>>();

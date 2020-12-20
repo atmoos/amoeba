@@ -19,6 +19,11 @@ namespace patternMatching
         }
         public static IEnumerable<TSearchOutput> Search<TAlphabet, TSearchOutput>(this ISearch<TAlphabet, TSearchOutput> search, IEnumerable<IEnumerable<TAlphabet>> inputStream)
         {
+            return search.Search<TAlphabet, IEnumerable<TAlphabet>, TSearchOutput>(inputStream);
+        }
+        public static IEnumerable<TSearchOutput> Search<TAlphabet, TText, TSearchOutput>(this ISearch<TAlphabet, TSearchOutput> search, IEnumerable<TText> inputStream)
+            where TText : IEnumerable<TAlphabet>
+        {
             foreach(var input in inputStream) {
                 foreach(var match in search.Search(input)) {
                     yield return match;

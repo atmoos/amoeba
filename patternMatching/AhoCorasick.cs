@@ -24,7 +24,8 @@ namespace patternMatching
             private readonly Node root;
             public TrieSearch(Node root) => this.root = root;
 
-            public IEnumerable<TOnMatch> Search(IEnumerable<TAlphabet> input)
+            public IEnumerable<TOnMatch> Search<TText>(TText input)
+                where TText : IEnumerable<TAlphabet>
             {
                 var next = this.root;
                 foreach(TAlphabet letter in input) {
