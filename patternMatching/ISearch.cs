@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace patternMatching
 {
-    public interface ITrie<TAlphabet, TEval>
+    public interface ISearch<TAlphabet, TEval>
         where TEval : IEnumerable<TAlphabet>
     {
         IEnumerable<TEval> Search(TEval input);

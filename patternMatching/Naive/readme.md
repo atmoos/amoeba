@@ -1,0 +1,2 @@
+# Naive Implementations
+In order to compare the effectiveness of algorithms, it is often valuable to compare them against naive implementations. Furthermore, comparing the results of an efficient algorithm against those of a naive implementation may help detecting bugs in the optimised version.

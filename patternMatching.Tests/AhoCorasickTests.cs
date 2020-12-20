@@ -9,11 +9,10 @@ namespace patternMatching.Tests
 {
     public class AhoCorasickTests
     {
-
         [Fact]
         public void NoMatchReturnsAnEmptyEnumerable()
         {
-            var trie = Trie("One", "two");
+            var trie = SearchFor("One", "two");
 
             var match = trie.Search("seven eight ten");
 
@@ -21,9 +20,9 @@ namespace patternMatching.Tests
         }
 
         [Fact]
-        public void TrieMatchesOneOccurrenceInTheCenter()
+        public void SearchMatchesOneOccurrenceInTheCenter()
         {
-            var trie = Trie("ab");
+            var trie = SearchFor("ab");
 
             var match = trie.Search("The ablative");
 
@@ -31,9 +30,9 @@ namespace patternMatching.Tests
         }
 
         [Fact]
-        public void TrieMatchesOneOccurrenceAtTheEnd()
+        public void SearchMatchesOneOccurrenceAtTheEnd()
         {
-            var trie = Trie("act");
+            var trie = SearchFor("act");
 
             var match = trie.Search("The abstract");
 
@@ -41,18 +40,18 @@ namespace patternMatching.Tests
         }
 
         [Fact]
-        public void TrieMatchesEachOccurrenceOnce()
+        public void SearchMatchesEachOccurrenceOnce()
         {
-            var trie = Trie("Fliegen");
+            var trie = SearchFor("Fliegen");
 
             var match = trie.Search("Wenn Fliegen hinter Fliegen fliegen, fliegen Fliegen Fliegen nach!");
 
             Assert.Equal(Result("Fliegen", "Fliegen", "Fliegen", "Fliegen"), match);
         }
         [Fact]
-        public void TrieMatchesTwoSeparatedPatterns()
+        public void SearchMatchesTwoSeparatedPatterns()
         {
-            var trie = Trie("lee", "luv");
+            var trie = SearchFor("lee", "luv");
 
             var match = trie.Search("von luv ins lee");
 
@@ -60,9 +59,9 @@ namespace patternMatching.Tests
         }
 
         [Fact]
-        public void TrieMatchesAdjacentSuffixPatterns()
+        public void SearchMatchesAdjacentSuffixPatterns()
         {
-            var trie = Trie("lee", "leeward");
+            var trie = SearchFor("lee", "leeward");
 
             var match = trie.Search("turn leeward!");
 
@@ -70,9 +69,9 @@ namespace patternMatching.Tests
         }
 
         [Fact]
-        public void TrieMatchesAdjacentPostfixPatterns()
+        public void SearchMatchesAdjacentPostfixPatterns()
         {
-            var trie = Trie("ward", "leeward");
+            var trie = SearchFor("ward", "leeward");
 
             var match = trie.Search("turn leeward!");
 
@@ -80,9 +79,9 @@ namespace patternMatching.Tests
         }
 
         [Fact]
-        public void TrieMatchesOverlappingSuffixPatterns()
+        public void SearchMatchesOverlappingSuffixPatterns()
         {
-            var trie = Trie("ton", "pontons");
+            var trie = SearchFor("ton", "pontons");
 
             var match = trie.Search("The pontons!");
 
@@ -90,9 +89,9 @@ namespace patternMatching.Tests
         }
 
         [Fact]
-        public void TrieMatchesAreReturnedInTheOrderTheyAppearInTheSearchText()
+        public void SearchMatchesAreReturnedInTheOrderTheyAppearInTheSearchText()
         {
-            var trie = Trie("seven", "five", "eight", "six");
+            var trie = SearchFor("seven", "five", "eight", "six");
 
             var match = trie.Search("... five, six, seven and eight!");
 
@@ -102,7 +101,7 @@ namespace patternMatching.Tests
         [Fact]
         public void InterleavedPatternsAreResolved()
         {
-            var trie = Trie("in", "tin", "sting");
+            var trie = SearchFor("in", "tin", "sting");
 
             var match = trie.Search("a tin in a stinger");
 
@@ -118,14 +117,7 @@ namespace patternMatching.Tests
             Assert.NotEqual(warmup, run);
         }
 
-        private static ITrie<Char, String> Trie(params String[] patterns)
-        {
-            var builder = new AhoCorasick();
-            foreach(var pattern in patterns) {
-                builder.Add(pattern);
-            }
-            return builder.Build();
-        }
+        private static ISearch<Char, String> SearchFor(params String[] patterns) => new AhoCorasick { patterns }.Build();
 
         private static IEnumerable<String> Result(params String[] result) => result;
 
@@ -134,35 +126,18 @@ namespace patternMatching.Tests
             var rand = new Random(dictSize);
             var text = CreateText(rand, textSize);
             var dictionary = Enumerable.Range(0, dictSize).Select(_ => rand.Next(dictSize, textSize).ToString()).ToArray();
-            var trie = Trie(dictionary);
+            var trie = SearchFor(dictionary);
+            var naive = new Naive.MultiPatternSearch { dictionary }.Build();
 
             var timer = Stopwatch.StartNew();
             var trieMatches = trie.Search(text).ToHashSet();
             var trieTiming = timer.Elapsed;
-            Console.WriteLine($"Trie: {trieTiming:g}");
+            Console.WriteLine($"Search search: {trieTiming:g}");
 
-            // naive
             timer.Restart();
-            var naiveMatches = new HashSet<String>();
-            foreach(var pattern in dictionary) {
-                var match = new HashSet<StringBuilder>(pattern.Length);
-                foreach(var letter in text) {
-                    StringBuilder remove = null;
-                    foreach(var m in match) {
-                        m.Append(letter);
-                        if(m.Length >= pattern.Length) {
-                            if(m.ToString() == pattern) {
-                                naiveMatches.Add(pattern);
-                            }
-                            remove = m;
-                        }
-                    }
-                    match.Remove(remove);
-                    match.Add(new StringBuilder(letter));
-                }
-            }
+            var naiveMatches = naive.Search(text).ToHashSet();
             var naiveTiming = timer.Elapsed;
-            Console.WriteLine($"Naive: {naiveTiming:g}");
+            Console.WriteLine($"Naive search: {naiveTiming:g}");
             Assert.Equal(naiveMatches, trieMatches);
             return (naiveTiming, trieTiming);
         }

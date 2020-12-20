@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -7,10 +6,9 @@ namespace patternMatching
 {
     // This implementation follows the following tutorial:
     // https://iq.opengenus.org/aho-corasick-algorithm/
-    public sealed class AhoCorasick : ITrieBuilder<Char, String>
+    public sealed class AhoCorasick : ISearchBuilder<Char, String>
     {
         private readonly Node trieRoot = Node.Root();
-
         public void Add(String pattern)
         {
             var next = this.trieRoot;
@@ -19,13 +17,12 @@ namespace patternMatching
             }
             next.Pattern = pattern;
         }
+        public ISearch<Char, String> Build() => new TrieSearch(Node.Compile(this.trieRoot));
 
-        public ITrie<Char, String> Build() => new Trie(Node.Compile(this.trieRoot));
-
-        private sealed class Trie : ITrie<Char, String>
+        private sealed class TrieSearch : ISearch<Char, String>
         {
             private readonly Node root;
-            public Trie(Node root) => this.root = root;
+            public TrieSearch(Node root) => this.root = root;
 
             public IEnumerable<String> Search(String input)
             {
@@ -35,7 +32,6 @@ namespace patternMatching
                     while((child = next.Next(c)) == null && next != this.root) {
                         next = next.Suffix;
                     }
-
                     next = child ?? this.root;
                     foreach(var pattern in next) {
                         yield return pattern;
@@ -58,9 +54,7 @@ namespace patternMatching
                 Letter = letter;
                 Suffix = root;
             }
-
             public Node Next(Char letter) => this.children.TryGetValue(letter, out var match) ? match : null;
-
             public Node Add(Char letter, Node root)
             {
                 if(this.children.TryGetValue(letter, out var child)) {
@@ -68,7 +62,6 @@ namespace patternMatching
                 }
                 return this.children[letter] = new Node(letter, root);
             }
-
             public void SetSuffix(Node suffix, Node root)
             {
                 this.Suffix = suffix ?? root;
