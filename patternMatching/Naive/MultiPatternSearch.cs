@@ -7,7 +7,7 @@ namespace patternMatching.Naive
     public sealed class MultiPatternSearch<TAlphabet, TMatch> : ISearchBuilder<TAlphabet, TMatch>
     {
         private readonly List<(IEnumerable<TAlphabet>, TMatch)> dictionary = new List<(IEnumerable<TAlphabet>, TMatch)>();
-        public void Add(IEnumerable<TAlphabet> pattern, TMatch match) => this.dictionary.Add((pattern, match));
+        public void Add(IEnumerable<TAlphabet> pattern, in TMatch match) => this.dictionary.Add((pattern, match));
 
         public ISearch<TAlphabet, TMatch> Build() => new NaiveSearch(this.dictionary.Select(Build));
 

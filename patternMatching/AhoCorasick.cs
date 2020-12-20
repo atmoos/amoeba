@@ -9,15 +9,15 @@ namespace patternMatching
     public sealed class AhoCorasick<TAlphabet, TOnMatch> : ISearchBuilder<TAlphabet, TOnMatch>
     {
         private readonly Node trieRoot = Node.Root();
-        public void Add(IEnumerable<TAlphabet> pattern, TOnMatch onMatch)
+        public void Add(IEnumerable<TAlphabet> pattern, in TOnMatch onMatch)
         {
             var next = this.trieRoot;
             foreach(var letter in pattern) {
-                next = next.Add(letter, this.trieRoot);
+                next = next.Add(in letter, this.trieRoot);
             }
             next.Match = onMatch;
         }
-        public ISearch<TAlphabet, TOnMatch> Build() => new TrieSearch(Node.Compile(this.trieRoot));
+        public ISearch<TAlphabet, TOnMatch> Build() => new TrieSearch(Node.Compile(in this.trieRoot));
 
         private sealed class TrieSearch : ISearch<TAlphabet, TOnMatch>
         {
@@ -30,7 +30,7 @@ namespace patternMatching
                 var next = this.root;
                 foreach(TAlphabet letter in input) {
                     Node child = null;
-                    while((child = next.Next(letter)) == null && next != this.root) {
+                    while((child = next.Next(in letter)) == null && next != this.root) {
                         next = next.Suffix;
                     }
                     next = child ?? this.root;
@@ -46,10 +46,9 @@ namespace patternMatching
             private Node output;
             private TOnMatch match;
             private Boolean hasMatch;
-            private readonly IDictionary<TAlphabet, Node> children = new Dictionary<TAlphabet, Node>();
+            private readonly Dictionary<TAlphabet, Node> children = new Dictionary<TAlphabet, Node>();
             public TAlphabet Letter { get; }
             public TOnMatch Match {
-                get => match;
                 set
                 {
                     this.hasMatch = true;
@@ -64,15 +63,15 @@ namespace patternMatching
                 Letter = letter;
                 Suffix = root;
             }
-            public Node Next(TAlphabet letter) => this.children.TryGetValue(letter, out var match) ? match : null;
-            public Node Add(TAlphabet letter, Node root)
+            public Node Next(in TAlphabet letter) => this.children.TryGetValue(letter, out var match) ? match : null;
+            public Node Add(in TAlphabet letter, Node root)
             {
                 if(this.children.TryGetValue(letter, out var child)) {
                     return child;
                 }
                 return this.children[letter] = new Node(letter, root);
             }
-            public void SetSuffix(Node suffix, Node root)
+            public void SetSuffix(Node suffix, in Node root)
             {
                 this.Suffix = suffix ?? root;
                 if(suffix != null && suffix != root) {
@@ -83,12 +82,12 @@ namespace patternMatching
             public IEnumerator<TOnMatch> GetEnumerator()
             {
                 if(this.hasMatch) {
-                    yield return Match;
+                    yield return this.match;
                 }
                 var temp = this.output;
                 while(temp != null) {
                     if(temp.hasMatch) {
-                        yield return temp.Match;
+                        yield return temp.match;
                     }
                     temp = temp.output;
                 }
@@ -96,7 +95,7 @@ namespace patternMatching
 
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
             public static Node Root() => new Node();
-            public static Node Compile(Node root)
+            public static Node Compile(in Node root)
             {
                 var nodes = new Queue<Node>(root.children.Values);
 
@@ -106,7 +105,7 @@ namespace patternMatching
                         while(temp != root && temp.Next(child.Letter) == null) {
                             temp = temp.Suffix;
                         }
-                        child.SetSuffix(temp.Next(child.Letter), root);
+                        child.SetSuffix(temp.Next(child.Letter), in root);
                         nodes.Enqueue(child);
                     }
                 }

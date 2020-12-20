@@ -14,7 +14,7 @@ namespace patternMatching
             where TText : IEnumerable<TAlphabet>
         {
             foreach(var (searchTerm, match) in searchTerms) {
-                builder.Add(searchTerm, match);
+                builder.Add(searchTerm, in match);
             }
         }
         public static IEnumerable<TSearchOutput> Search<TAlphabet, TSearchOutput>(this ISearch<TAlphabet, TSearchOutput> search, IEnumerable<IEnumerable<TAlphabet>> inputStream)
