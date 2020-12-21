@@ -2,149 +2,12 @@ using System;
 using System.Linq;
 using System.Text;
 using System.Diagnostics;
-using System.Collections.Generic;
 using Xunit;
 
 namespace patternMatching.Tests
 {
-    public class AhoCorasickTests
+    public sealed class AhoCorasickTests : TestSearchAlgorithm<AhoCorasick<Char, String>>
     {
-        [Fact]
-        public void NoMatchReturnsAnEmptyEnumerable()
-        {
-            var trie = SearchFor("One", "two");
-
-            var match = trie.Search("seven eight ten");
-
-            Assert.Equal(Enumerable.Empty<string>(), match);
-        }
-
-        [Fact]
-        public void DuplicatePatternEntriesDoesNotCauseDuplicateMatches()
-        {
-            var trie = SearchFor("one", "two", "two", "three");
-
-            var match = trie.Search("one two three");
-
-            Assert.Equal(Result("one", "two", "three"), match);
-        }
-
-        [Fact]
-        public void SearchMatchesOneOccurrenceAtTheBeginning()
-        {
-            var trie = SearchFor("ab");
-
-            var match = trie.Search("abca");
-
-            Assert.Equal(Result("ab"), match);
-        }
-
-        [Fact]
-        public void SearchMatchesOneOccurrenceInTheCenter()
-        {
-            var trie = SearchFor("ab");
-
-            var match = trie.Search("The ablative");
-
-            Assert.Equal(Result("ab"), match);
-        }
-
-        [Fact]
-        public void SearchMatchesOneOccurrenceAtTheEnd()
-        {
-            var trie = SearchFor("act");
-
-            var match = trie.Search("The abstract");
-
-            Assert.Equal(Result("act"), match);
-        }
-
-        [Fact]
-        public void SearchMatchesEachOccurrenceOnce()
-        {
-            var trie = SearchFor("Fliegen");
-
-            var match = trie.Search("Wenn Fliegen hinter Fliegen fliegen, fliegen Fliegen Fliegen nach!");
-
-            Assert.Equal(Result("Fliegen", "Fliegen", "Fliegen", "Fliegen"), match);
-        }
-        [Fact]
-        public void SearchMatchesTwoSeparatedPatterns()
-        {
-            var trie = SearchFor("lee", "luv");
-
-            var match = trie.Search("von luv ins lee");
-
-            Assert.Equal(Result("luv", "lee"), match);
-        }
-
-        [Fact]
-        public void SearchMatchesAdjacentSuffixPatterns()
-        {
-            var trie = SearchFor("lee", "leeward");
-
-            var match = trie.Search("turn leeward!");
-
-            Assert.Equal(Result("lee", "leeward"), match);
-        }
-
-        [Fact]
-        public void SearchMatchesAdjacentPostfixPatterns()
-        {
-            var trie = SearchFor("ward", "leeward");
-
-            var match = trie.Search("turn leeward!");
-
-            Assert.Equal(Result("leeward", "ward"), match);
-        }
-
-        [Fact]
-        public void SearchMatchesOverlappingSuffixPatterns()
-        {
-            var trie = SearchFor("ton", "pontons");
-
-            var match = trie.Search("The pontons!");
-
-            Assert.Equal(Result("ton", "pontons"), match);
-        }
-
-        [Fact]
-        public void SearchMatchesAreReturnedInTheOrderTheyAppearInTheSearchText()
-        {
-            var trie = SearchFor("seven", "five", "eight", "six");
-
-            var match = trie.Search("... five, six, seven and eight!");
-
-            Assert.Equal(Result("five", "six", "seven", "eight"), match);
-        }
-
-        [Fact]
-        public void InterleavedPatternsAreResolved()
-        {
-            var trie = SearchFor("in", "tin", "sting");
-
-            var match = trie.Search("a tin in a stinger");
-
-            Assert.Equal(Result("tin", "in", "in", "tin", "in", "sting"), match);
-        }
-
-        [Fact]
-        public void IndexesInSourceStringAreFound()
-        {
-            const String sourceString = "a tin in a stinger";
-            var trie = SearchFor("in", "tin", "sting");
-
-            var match = trie.SearchForStartIndices(sourceString, m => (UInt64)m.Length);
-
-            AssertMatchesAreIn(sourceString, match);
-        }
-
-        private static void AssertMatchesAreIn(String sourceString, IEnumerable<(UInt64 position, String match)> matches)
-        {
-            foreach(var (position, segment) in matches) {
-                Assert.Equal(segment, sourceString.Substring((Int32)position, segment.Length));
-            }
-        }
 
         [Fact]
         public void AhoCorasickIsFasterThanNaiveApproach()
@@ -154,10 +17,6 @@ namespace patternMatching.Tests
             Assert.True(run.naive > run.aho);
             Assert.NotEqual(warmup, run);
         }
-
-        private static ISearch<Char, String> SearchFor(params String[] patterns) => new AhoCorasick<Char, String> { patterns }.Build();
-
-        private static IEnumerable<String> Result(params String[] result) => result;
 
         private static (TimeSpan naive, TimeSpan aho) TimeMatching(Int32 dictSize, Int32 textSize)
         {
