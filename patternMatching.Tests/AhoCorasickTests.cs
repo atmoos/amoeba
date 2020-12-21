@@ -20,6 +20,26 @@ namespace patternMatching.Tests
         }
 
         [Fact]
+        public void DuplicatePatternEntriesDoesNotCauseDuplicateMatches()
+        {
+            var trie = SearchFor("one", "two", "two", "three");
+
+            var match = trie.Search("one two three");
+
+            Assert.Equal(Result("one", "two", "three"), match);
+        }
+
+        [Fact]
+        public void SearchMatchesOneOccurrenceAtTheBeginning()
+        {
+            var trie = SearchFor("ab");
+
+            var match = trie.Search("abca");
+
+            Assert.Equal(Result("ab"), match);
+        }
+
+        [Fact]
         public void SearchMatchesOneOccurrenceInTheCenter()
         {
             var trie = SearchFor("ab");
@@ -116,7 +136,12 @@ namespace patternMatching.Tests
 
             var match = trie.SearchForStartIndices(sourceString, m => (UInt64)m.Length);
 
-            foreach(var (position, segment) in match) {
+            AssertMatchesAreIn(sourceString, match);
+        }
+
+        private static void AssertMatchesAreIn(String sourceString, IEnumerable<(UInt64 position, String match)> matches)
+        {
+            foreach(var (position, segment) in matches) {
                 Assert.Equal(segment, sourceString.Substring((Int32)position, segment.Length));
             }
         }
@@ -143,14 +168,15 @@ namespace patternMatching.Tests
             var naive = new Naive.MultiPatternSearch<Char, String> { dictionary }.Build();
 
             var timer = Stopwatch.StartNew();
-            var trieMatches = trie.Search(text).ToHashSet();
+            var trieMatches = trie.Search(text).ToList();
             var trieTiming = timer.Elapsed;
-            Console.WriteLine($"Aho-C search: {trieTiming:g}");
+            Console.WriteLine($"Aho-C search: {trieTiming:g} with {trieMatches.Count} matches.");
 
             timer.Restart();
-            var naiveMatches = naive.Search(text).ToHashSet();
+            var naiveMatches = naive.Search(text).ToList();
             var naiveTiming = timer.Elapsed;
-            Console.WriteLine($"Naive search: {naiveTiming:g}");
+            Console.WriteLine($"Naive search: {naiveTiming:g} with {naiveMatches.Count} matches.");
+
             Assert.Equal(naiveMatches, trieMatches);
             return (naiveTiming, trieTiming);
         }
