@@ -29,7 +29,10 @@ namespace patternMatching
             {
                 var next = this.root;
                 foreach(TAlphabet letter in input) {
-                    next = next.Next(in letter) ?? this.root;
+                    if((next = next.Next(in letter)) == null) {
+                        next = this.root;
+                        continue;
+                    }
                     foreach(var pattern in next) {
                         yield return pattern;
                     }
@@ -68,7 +71,7 @@ namespace patternMatching
             public IEnumerator<TOnMatch> GetEnumerator()
             {
                 var temp = this.hasMatch ? this : this.output;
-                while(temp != null && temp.hasMatch) {
+                while(temp != null) {
                     yield return temp.match;
                     temp = temp.output;
                 }
@@ -81,15 +84,21 @@ namespace patternMatching
                 var nodes = new Queue<Node>(root.children.Values);
                 while(nodes.TryDequeue(out var current)) {
                     foreach(var (letter, child) in current.children) {
-                        Node probe;
+                        Node sProbe;
                         var suffix = current.suffix;
-                        while((probe = suffix.Probe(in letter)) == null && suffix != root) {
+                        while((sProbe = suffix.Probe(in letter)) == null && suffix != root) {
                             suffix = suffix.suffix;
                         }
-                        child.suffix = probe ?? root;
+                        child.suffix = sProbe ?? root;
                         nodes.Enqueue(child);
                     }
-                    current.output = current.suffix != root ? current.suffix : null;
+                    var output = current.suffix;
+                    while(!output.hasMatch && output != root) {
+                        output = output.suffix;
+                    }
+                    if(output != root) {
+                        current.output = output;
+                    }
                 }
                 return root;
             }
