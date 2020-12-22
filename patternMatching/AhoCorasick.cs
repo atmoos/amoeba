@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace patternMatching
 {
@@ -36,6 +37,7 @@ namespace patternMatching
             }
         }
 
+        [DebuggerDisplay("n: {letter}")]
         private sealed class Node : IEnumerable<TOnMatch>
         {
             private Node output;
@@ -62,13 +64,6 @@ namespace patternMatching
                 }
                 return this.children[letter] = new Node(this, letter);
             }
-            public void SetSuffix(Node suffix, in Node root)
-            {
-                this.suffix = suffix ?? root;
-                if(suffix != null && suffix != root) {
-                    this.output = suffix;
-                }
-            }
 
             public IEnumerator<TOnMatch> GetEnumerator()
             {
@@ -91,9 +86,10 @@ namespace patternMatching
                         while((probe = suffix.Probe(in letter)) == null && suffix != root) {
                             suffix = suffix.suffix;
                         }
-                        child.SetSuffix(probe, in root);
+                        child.suffix = probe ?? root;
                         nodes.Enqueue(child);
                     }
+                    current.output = current.suffix != root ? current.suffix : null;
                 }
                 return root;
             }

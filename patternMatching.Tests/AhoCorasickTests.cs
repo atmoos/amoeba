@@ -23,18 +23,16 @@ namespace patternMatching.Tests
             var rand = new Random(dictSize);
             var text = CreateText(rand, textSize);
             var dictionary = Enumerable.Range(0, dictSize).Select(_ => rand.Next(dictSize, textSize).ToString()).ToArray();
-            var trie = SearchFor(dictionary);
+            var trie = new AhoCorasick<Char, String> { dictionary }.Build();
             var naive = new Naive.MultiPatternSearch<Char, String> { dictionary }.Build();
 
             var timer = Stopwatch.StartNew();
             var trieMatches = trie.Search(text).ToList();
             var trieTiming = timer.Elapsed;
-            Console.WriteLine($"Aho-C search: {trieTiming:g} with {trieMatches.Count} matches.");
 
             timer.Restart();
             var naiveMatches = naive.Search(text).ToList();
             var naiveTiming = timer.Elapsed;
-            Console.WriteLine($"Naive search: {naiveTiming:g} with {naiveMatches.Count} matches.");
 
             Assert.Equal(naiveMatches, trieMatches);
             return (naiveTiming, trieTiming);
