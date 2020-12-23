@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -29,12 +28,11 @@ namespace patternMatching
             {
                 var next = this.root;
                 foreach(TAlphabet letter in input) {
-                    if((next = next.Next(in letter)) == null) {
-                        next = this.root;
+                    if((next = next.Next(in letter) ?? this.root) == this.root || !next.HasMatch) {
                         continue;
                     }
-                    foreach(var pattern in next) {
-                        yield return pattern;
+                    foreach(var match in next) {
+                        yield return match;
                     }
                 }
             }
@@ -49,12 +47,9 @@ namespace patternMatching
             private Boolean hasMatch;
             private readonly TAlphabet letter;
             private readonly Dictionary<TAlphabet, Node> children = new Dictionary<TAlphabet, Node>();
+            public Boolean HasMatch => this.hasMatch || output != null;
             public TOnMatch Match {
-                set
-                {
-                    this.hasMatch = true;
-                    this.match = value;
-                }
+                set => (this.match, this.hasMatch) = (value, true);
             }
             private Node() { }
             private Node(Node suffix, TAlphabet letter) => (this.suffix, this.letter) = (suffix, letter);
@@ -70,14 +65,14 @@ namespace patternMatching
 
             public IEnumerator<TOnMatch> GetEnumerator()
             {
-                var temp = this.hasMatch ? this : this.output;
-                while(temp != null) {
-                    yield return temp.match;
-                    temp = temp.output;
+                var output = this.hasMatch ? this : this.output;
+                while(output != null) {
+                    yield return output.match;
+                    output = output.output;
                 }
             }
 
-            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+            System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
             public static Node Root() => new Node();
             public static Node Compile(in Node root)
             {
