@@ -5,18 +5,46 @@ using System.Collections.Generic;
 
 namespace datastructures
 {
-    internal sealed class Node<TLabel> : IEnumerable<Node<TLabel>>
+    public interface INode<out TLabel>
     {
-        private readonly Dictionary<TLabel, Node<TLabel>> children = new Dictionary<TLabel, Node<TLabel>>();
+        TLabel Label { get; }
+        Boolean MarksEndOfWord { get; }
+    }
+    public interface INode<TLabel, out TNode> : INode<TLabel>
+        where TNode : INode<TLabel>
+    {
+        TNode Next(in TLabel label);
+    }
+    internal sealed class Node<TLabel> : INode<TLabel, Node<TLabel>>, IEnumerable<Node<TLabel>>
+    {
+        private readonly Dictionary<TLabel, Node<TLabel>> children;
         public TLabel Label { get; }
-        private Node() { }
-        private Node(TLabel label) => Label = label;
+        public Boolean MarksEndOfWord { get; } = false;
+        private Node() => this.children = new Dictionary<TLabel, Node<TLabel>>();
+        private Node(TLabel label, Boolean isEndOfWord) : this() => (Label, MarksEndOfWord) = (label, isEndOfWord);
+        private Node(Node<TLabel> node, Boolean isEndOfWord)
+            : this()
+        {
+            Label = node.Label;
+            MarksEndOfWord = isEndOfWord;
+            this.children = node.children;
+        }
         public Node<TLabel> Add(in TLabel label)
         {
             if(this.children.TryGetValue(label, out var child)) {
                 return child;
             }
-            return this.children[label] = new Node<TLabel>(label);
+            return this.children[label] = new Node<TLabel>(label, false);
+        }
+        public Node<TLabel> AddEnd(in TLabel label)
+        {
+            if(this.children.TryGetValue(label, out var child)) {
+                if(child.MarksEndOfWord) {
+                    return child;
+                }
+                return this.children[label] = new Node<TLabel>(child, true);
+            }
+            return this.children[label] = new Node<TLabel>(label, true);
         }
         public Node<TLabel> Next(in TLabel label) => this.children.TryGetValue(label, out var child) ? child : null;
         public static Node<TLabel> Root() => new Node<TLabel>();
@@ -29,6 +57,8 @@ namespace datastructures
     public sealed class Trie<TLabel, TValue> : IEnumerable<TValue>
     {
         private readonly Trie<TLabel> lookup = new Trie<TLabel>();
+
+        // This is somewhat pointless, but is useful as proof of concept.
         private readonly Dictionary<Node<TLabel>, TValue> values = new Dictionary<Node<TLabel>, TValue>();
         public void Add(IEnumerable<TLabel> key, TValue value) => this.values[this.lookup.AddKey(key)] = value;
         public void Add<TKey>(IEnumerable<(TKey, TValue)> pairs)
@@ -66,11 +96,15 @@ namespace datastructures
         public Boolean Contains(IEnumerable<TLabel> key) => FindKey(key) != null;
         internal Node<TLabel> AddKey(IEnumerable<TLabel> key)
         {
-            var next = this.root;
+            (Node<TLabel> node, TLabel label) next = (null, default);
             foreach(var label in key) {
-                next = next.Add(in label);
+                if(next.node == null) {
+                    next = (this.root, label);
+                    continue;
+                }
+                next = (next.node.Add(next.label), label);
             }
-            return next;
+            return next.node.AddEnd(next.label);
         }
         internal Node<TLabel> FindKey(IEnumerable<TLabel> key)
         {
