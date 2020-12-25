@@ -90,9 +90,9 @@ namespace patternMatching
             public static Node Compile(in Node<TAlphabet> trie)
             {
                 var root = Node.Root(trie);
-                var map = new Map<Node<TAlphabet>, Node>(); // don't include root!!
-                var suffixes = new Map<Node<TAlphabet>, Node<TAlphabet>>();
                 var nodes = new Queue<Node>();
+                var map = new Map<Node<TAlphabet>, Node>(); // do not add root!
+                var suffixes = new Map<Node<TAlphabet>, Node<TAlphabet>>();
                 foreach(var (letter, child) in trie.Children) {
                     suffixes[child] = trie;
                     nodes.Enqueue(root.children[letter] = map[child] = new Node(child, root, null));
@@ -108,7 +108,7 @@ namespace patternMatching
                         while(!output.MarksEndOfWord && output != trie) {
                             output = suffixes[output];
                         }
-                        var newChild = new Node(child, map[suffix], map[output]);
+                        var newChild = new Node(child, map[suffix] ?? root, map[output]);
                         nodes.Enqueue(current.children[letter] = map[child] = newChild);
                     }
                 }

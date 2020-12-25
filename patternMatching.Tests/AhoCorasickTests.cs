@@ -8,6 +8,18 @@ namespace patternMatching.Tests
 {
     public sealed class AhoCorasickTests : TestSearchAlgorithm<AhoCorasick<Char, String>>
     {
+
+        [Fact]
+        public void OverlapingKeysTwo()
+        {
+            // This is a minimal test!
+            // I.e: All characters in the assert and act strings are relevant.
+            var trie = SearchFor("18", "3");
+
+            var match = trie.Search("183");
+
+            Assert.Equal(Result("18", "3"), match);
+        }
         [Fact]
         public void OverlapingKeys()
         {
@@ -45,6 +57,7 @@ namespace patternMatching.Tests
             var naiveMatches = naive.Search(text).ToList();
             var naiveTiming = timer.Elapsed;
 
+            Assert.Equal(String.Join("|", naiveMatches), String.Join("|", trieMatches));
             Assert.Equal(naiveMatches, trieMatches);
             return (naiveTiming, trieTiming);
         }
