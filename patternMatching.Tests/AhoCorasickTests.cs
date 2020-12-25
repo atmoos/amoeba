@@ -8,6 +8,17 @@ namespace patternMatching.Tests
 {
     public sealed class AhoCorasickTests : TestSearchAlgorithm<AhoCorasick<Char, String>>
     {
+        [Fact]
+        public void OverlapingKeys()
+        {
+            // This is a minimal test!
+            // I.e: All characters in the assert and act strings are relevant.
+            var trie = SearchFor("16", "36");
+
+            var match = trie.Search("136");
+
+            Assert.Equal(Result("36"), match);
+        }
 
         [Fact]
         public void AhoCorasickIsFasterThanNaiveApproach()

@@ -38,6 +38,15 @@ namespace datastructures
             return this.children[label] = new Node<TLabel>(label, true);
         }
         public Node<TLabel> Next(in TLabel label) => this.children.TryGetValue(label, out var child) ? child : null;
+
+        public override String ToString()
+        {
+            string mark = String.Empty;
+            if(this.MarksEndOfWord) {
+                mark = this.children.Count == 0 ? "*" : "|*";
+            }
+            return $"{String.Join(";", this.children.Keys)}{mark}";
+        }
         internal static Node<TLabel> Root() => new Node<TLabel>();
 
         public IEnumerator<Node<TLabel>> GetEnumerator() => this.children.Values.SelectMany(c => c.children.Values).GetEnumerator();

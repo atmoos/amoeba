@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.Diagnostics;
 using datastructures;
@@ -58,8 +57,8 @@ namespace patternMatching
         [DebuggerDisplay("n: {letter}")]
         private sealed class Node : IEnumerable<Node<TAlphabet>>
         {
-            private Node suffix;
-            private Node output;
+            private readonly Node output;
+            private readonly Node suffix;
             private readonly Node<TAlphabet> self;
             private readonly Dictionary<TAlphabet, Node> children;
             public Boolean HasMatch => this.self.MarksEndOfWord || this.output != null;
@@ -96,7 +95,7 @@ namespace patternMatching
                 var nodes = new Queue<Node>();
                 foreach(var (letter, child) in trie.Children) {
                     suffixes[child] = trie;
-                    nodes.Enqueue(root.children[letter] = map[child] = new Node(child, null, null));
+                    nodes.Enqueue(root.children[letter] = map[child] = new Node(child, root, null));
                 }
                 while(nodes.TryDequeue(out var current)) {
                     foreach(var (letter, child) in current.self.Children) {
@@ -105,12 +104,10 @@ namespace patternMatching
                         while((probe = suffix.Next(in letter)) == null && suffix != trie) {
                             suffix = suffixes[suffix];
                         }
-                        suffix = probe ?? trie;
-                        var output = suffix;
+                        var output = suffix = suffixes[child] = probe ?? trie;
                         while(!output.MarksEndOfWord && output != trie) {
                             output = suffixes[output];
                         }
-                        suffixes[child] = suffix;
                         var newChild = new Node(child, map[suffix], map[output]);
                         nodes.Enqueue(current.children[letter] = map[child] = newChild);
                     }
