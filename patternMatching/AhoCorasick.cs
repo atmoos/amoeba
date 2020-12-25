@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Diagnostics;
+using datastructures;
 
 namespace patternMatching
 {
@@ -8,21 +10,28 @@ namespace patternMatching
     // https://iq.opengenus.org/aho-corasick-algorithm/
     public sealed class AhoCorasick<TAlphabet, TOnMatch> : ISearchBuilder<TAlphabet, TOnMatch>
     {
-        private readonly Node trieRoot = Node.Root();
+        private readonly Trie<TAlphabet> trie = new Trie<TAlphabet>();
+        private readonly Dictionary<Node<TAlphabet>, TOnMatch> matchValues = new Dictionary<Node<TAlphabet>, TOnMatch>();
         public void Add(IEnumerable<TAlphabet> pattern, in TOnMatch onMatch)
         {
-            var next = this.trieRoot;
-            foreach(var letter in pattern) {
-                next = next.Add(in letter);
-            }
-            next.Match = onMatch;
+            this.matchValues[this.trie.AddKey(pattern)] = onMatch;
         }
-        public ISearch<TAlphabet, TOnMatch> Build() => new TrieSearch(Node.Compile(in this.trieRoot));
+        public ISearch<TAlphabet, TOnMatch> Build()
+        {
+            var root = Node.Compile(this.trie.Root);
+            return new TrieSearch(root, this.matchValues);
+        }
 
         private sealed class TrieSearch : ISearch<TAlphabet, TOnMatch>
         {
             private readonly Node root;
-            public TrieSearch(Node root) => this.root = root;
+            private readonly Dictionary<Node<TAlphabet>, TOnMatch> matchValues = new Dictionary<Node<TAlphabet>, TOnMatch>();
+            public TrieSearch(Node root, Dictionary<Node<TAlphabet>, TOnMatch> matchValues)
+            {
+                this.root = root;
+                this.matchValues = matchValues;
+            }
+
             public IEnumerable<TOnMatch> Search<TText>(TText input)
                 where TText : IEnumerable<TAlphabet>
             {
@@ -32,67 +41,78 @@ namespace patternMatching
                         continue;
                     }
                     foreach(var match in next) {
-                        yield return match;
+                        yield return this.matchValues[match];
                     }
                 }
             }
         }
-
-        [DebuggerDisplay("n: {letter}")]
-        private sealed class Node : IEnumerable<TOnMatch>
+        private sealed class Map<TKey, TValue> where TValue : class
         {
-            private Node output;
-            private Node suffix;
-            private TOnMatch match;
-            private Boolean hasMatch;
-            private readonly TAlphabet letter;
-            private readonly Dictionary<TAlphabet, Node> children = new Dictionary<TAlphabet, Node>();
-            public Boolean HasMatch => this.hasMatch || output != null;
-            public TOnMatch Match {
-                set => (this.match, this.hasMatch) = (value, true);
-            }
-            private Node() { }
-            private Node(Node suffix, TAlphabet letter) => (this.suffix, this.letter) = (suffix, letter);
-            public Node Next(in TAlphabet letter) => this.children.TryGetValue(letter, out var match) ? match : this.suffix?.Next(in letter);
-            private Node Probe(in TAlphabet letter) => this.children.TryGetValue(letter, out var match) ? match : null;
-            public Node Add(in TAlphabet letter)
-            {
-                if(this.children.TryGetValue(letter, out var child)) {
-                    return child;
-                }
-                return this.children[letter] = new Node(this, letter);
+            private readonly Dictionary<TKey, TValue> map = new Dictionary<TKey, TValue>();
+            public TValue this[in TKey key] {
+                get => this.map.TryGetValue(key, out var value) ? value : null;
+                set => this.map[key] = value;
             }
 
-            public IEnumerator<TOnMatch> GetEnumerator()
+        }
+        [DebuggerDisplay("n: {letter}")]
+        private sealed class Node : IEnumerable<Node<TAlphabet>>
+        {
+            private Node suffix;
+            private Node output;
+            private readonly Node<TAlphabet> self;
+            private readonly Dictionary<TAlphabet, Node> children;
+            public Boolean HasMatch => this.self.MarksEndOfWord || this.output != null;
+            private Node(Node<TAlphabet> self)
             {
-                var output = this.hasMatch ? this : this.output;
+                this.self = self;
+                this.children = new Dictionary<TAlphabet, Node>();
+            }
+            private Node(Node<TAlphabet> self, Node suffix, Node output)
+            {
+                this.self = self;
+                this.suffix = suffix;
+                this.output = output;
+                this.children = new Dictionary<TAlphabet, Node>();
+            }
+            public Node Next(in TAlphabet letter) => this.children.TryGetValue(letter, out var child) ? child : this.suffix?.Next(in letter);
+
+            public IEnumerator<Node<TAlphabet>> GetEnumerator()
+            {
+                var output = this.self.MarksEndOfWord ? this : this.output;
                 while(output != null) {
-                    yield return output.match;
+                    yield return output.self;
                     output = output.output;
                 }
             }
 
             System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
-            public static Node Root() => new Node();
-            public static Node Compile(in Node root)
+            public static Node Root(Node<TAlphabet> root) => new Node(root);
+            public static Node Compile(in Node<TAlphabet> trie)
             {
-                var nodes = new Queue<Node>(root.children.Values);
+                var root = Node.Root(trie);
+                var map = new Map<Node<TAlphabet>, Node>(); // don't include root!!
+                var suffixes = new Map<Node<TAlphabet>, Node<TAlphabet>>();
+                var nodes = new Queue<Node>();
+                foreach(var (letter, child) in trie.Children) {
+                    suffixes[child] = trie;
+                    nodes.Enqueue(root.children[letter] = map[child] = new Node(child, null, null));
+                }
                 while(nodes.TryDequeue(out var current)) {
-                    foreach(var (letter, child) in current.children) {
-                        Node sProbe;
-                        var suffix = current.suffix;
-                        while((sProbe = suffix.Probe(in letter)) == null && suffix != root) {
-                            suffix = suffix.suffix;
+                    foreach(var (letter, child) in current.self.Children) {
+                        Node<TAlphabet> probe;
+                        var suffix = suffixes[current.self];
+                        while((probe = suffix.Next(in letter)) == null && suffix != trie) {
+                            suffix = suffixes[suffix];
                         }
-                        child.suffix = sProbe ?? root;
-                        nodes.Enqueue(child);
-                    }
-                    var output = current.suffix;
-                    while(!output.hasMatch && output != root) {
-                        output = output.suffix;
-                    }
-                    if(output != root) {
-                        current.output = output;
+                        suffix = probe ?? trie;
+                        var output = suffix;
+                        while(!output.MarksEndOfWord && output != trie) {
+                            output = suffixes[output];
+                        }
+                        suffixes[child] = suffix;
+                        var newChild = new Node(child, map[suffix], map[output]);
+                        nodes.Enqueue(current.children[letter] = map[child] = newChild);
                     }
                 }
                 return root;
