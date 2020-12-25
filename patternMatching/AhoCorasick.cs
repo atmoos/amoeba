@@ -36,7 +36,7 @@ namespace patternMatching
             {
                 var next = this.root;
                 foreach(TAlphabet letter in input) {
-                    if((next = next.Next(in letter) ?? this.root) == this.root || !next.HasMatch) {
+                    if(!(next = next.Next(in letter) ?? this.root).HasMatch) {
                         continue;
                     }
                     foreach(var match in next) {
@@ -54,7 +54,7 @@ namespace patternMatching
             }
 
         }
-        [DebuggerDisplay("n: {letter}")]
+
         private sealed class Node : IEnumerable<Node<TAlphabet>>
         {
             private readonly Node output;
@@ -90,14 +90,14 @@ namespace patternMatching
             public static Node Compile(in Node<TAlphabet> trie)
             {
                 var root = Node.Root(trie);
-                var nodes = new Queue<Node>();
-                var map = new Map<Node<TAlphabet>, Node>(); // do not add root!
+                var breadthFirstQueue = new Queue<Node>();
+                var nodes = new Map<Node<TAlphabet>, Node>(); // do not add root!
                 var suffixes = new Map<Node<TAlphabet>, Node<TAlphabet>>();
                 foreach(var (letter, child) in trie.Children) {
                     suffixes[child] = trie;
-                    nodes.Enqueue(root.children[letter] = map[child] = new Node(child, root, null));
+                    breadthFirstQueue.Enqueue(root.children[letter] = nodes[child] = new Node(child, root, null));
                 }
-                while(nodes.TryDequeue(out var current)) {
+                while(breadthFirstQueue.TryDequeue(out var current)) {
                     foreach(var (letter, child) in current.self.Children) {
                         Node<TAlphabet> probe;
                         var suffix = suffixes[current.self];
@@ -108,8 +108,8 @@ namespace patternMatching
                         while(!output.MarksEndOfWord && output != trie) {
                             output = suffixes[output];
                         }
-                        var newChild = new Node(child, map[suffix] ?? root, map[output]);
-                        nodes.Enqueue(current.children[letter] = map[child] = newChild);
+                        var newChild = new Node(child, nodes[suffix] ?? root, nodes[output]);
+                        breadthFirstQueue.Enqueue(current.children[letter] = nodes[child] = newChild);
                     }
                 }
                 return root;

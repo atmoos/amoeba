@@ -138,6 +138,31 @@ namespace patternMatching.Tests
             AssertMatchesAreIn(sourceString, match);
         }
 
+
+
+        [Fact]
+        public void SuffixIsSetToRootWhenNoProperSuffixIsFound()
+        {
+            // This is a minimal test!
+            // I.e: All characters in the assert and act strings are relevant.
+            var trie = SearchFor("18", "3"); // there is no proper suffix for '8', hence next state must be root, in order to get to '3'
+
+            var match = trie.Search("183");
+
+            Assert.Equal(Result("18", "3"), match);
+        }
+        [Fact]
+        public void TheImmediateChildrenOfRootMustBeAssignedRootAsSuffix()
+        {
+            // This is a minimal test!
+            // I.e: All characters in the assert and act strings are relevant.
+            var trie = SearchFor("16", "36");
+
+            var match = trie.Search("136");
+
+            Assert.Equal(Result("36"), match);
+        }
+
         protected static void AssertMatchesAreIn(String sourceString, IEnumerable<(UInt64 position, String match)> matches)
         {
             foreach(var (position, segment) in matches) {
