@@ -10,10 +10,11 @@ Intel Core i7-8565U CPU 1.80GHz (Whiskey Lake), 1 CPU, 8 logical and 4 physical 
 ```
 
 ## 26 December 2020
+---
 
-### This Commit
+### Commit ID _f5fb39b7_
 
-### Memory
+#### Memory
 |               Method | WordsInDictionary | WordSize |        Mean |        Error |     StdDev |     Gen 0 |     Gen 1 |    Gen 2 |   Allocated |
 |--------------------- |------------------ |--------- |------------:|-------------:|-----------:|----------:|----------:|---------:|------------:|
 |       NaiveFullBuild |                60 |       12 |    29.25 us |     1.768 us |   0.097 us |    3.4790 |    0.0610 |        - |    14.41 KB |

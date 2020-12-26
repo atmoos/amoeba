@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Xunit;
 
 namespace datastructures.Tests
@@ -32,6 +33,24 @@ namespace datastructures.Tests
         {
             var trie = new Trie<Char> { "Gattaca" };
             Assert.False(trie.Contains("a"));
+        }
+
+        [Fact]
+        public void TrieSizeIsCorrectValue()
+        {
+            var trie = new Trie<Char> { Words("pool", "prize", "preview", "prepare", "produce", "progress") };
+
+            Assert.Equal(27, trie.Size);
+        }
+
+        [Fact]
+        public void TrieSizeIsSmallerThanNumberOfAddedCharacters()
+        {
+            var words = Words("pool", "prize", "preview", "prepare", "produce", "progress");
+            var trie = new Trie<Char> { words };
+            var charCount = words.SelectMany(w => w).Count();
+
+            Assert.InRange(trie.Size, words.Length, charCount);
         }
         private static String[] Words(params String[] words) => words;
     }

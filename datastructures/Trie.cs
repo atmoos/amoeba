@@ -42,7 +42,6 @@ namespace datastructures
             }
             return child;
         }
-        internal IEnumerable<Node> Labels() => this.root;
 
         IEnumerator IEnumerable.GetEnumerator()
         {

@@ -21,10 +21,9 @@ namespace patternMatching
         }
         private (TOnMatch[] matches, Dictionary<Trie<TAlphabet>.Node, Int32> map) CompileMatchesMap()
         {
+            var index = 0;
             var matches = new TOnMatch[this.matchValues.Count];
             var map = new Dictionary<Trie<TAlphabet>.Node, Int32>(matches.Length);
-
-            var index = 0;
             foreach(var (node, match) in this.matchValues) {
                 matches[index] = match;
                 map[node] = index++;
@@ -108,9 +107,10 @@ namespace patternMatching
                     breadthFirstQueue.Enqueue((rootState.next[letter] = nodes[child] = Create(in indexMap, in child, null), child));
                 }
                 while(breadthFirstQueue.TryDequeue(out var current)) {
+                    var currentSuffix = suffixes[current.node];
                     foreach(var (letter, child) in current.node.Children) {
                         Trie<TAlphabet>.Node probe;
-                        var suffix = suffixes[current.node];
+                        var suffix = currentSuffix;
                         while((probe = suffix.Next(in letter)) == null && suffix != trieRoot) {
                             suffix = suffixes[suffix];
                         }
@@ -118,15 +118,13 @@ namespace patternMatching
                         while(!output.MarksEndOfWord && output != trieRoot) {
                             output = suffixes[output];
                         }
-                        var newChild = current.state.next[letter] = nodes[child] = Create(indexMap, child, nodes[output]);
+                        var newChild = current.state.next[letter] = nodes[child] = Create(in indexMap, in child, nodes[output]);
                         breadthFirstQueue.Enqueue((newChild, child));
                     }
-                    Trie<TAlphabet>.Node suffixNode = suffixes[current.node];
-                    var suffixState = suffixNode == trieRoot ? rootState : nodes[suffixNode];
+                    // Flatten the trie such that each state has all next states, given a known letter.
+                    var suffixState = currentSuffix == trieRoot ? rootState : nodes[currentSuffix];
                     foreach(var (letter, state) in suffixState.next) {
-                        if(!current.state.next.ContainsKey(letter)) {
-                            current.state.next[letter] = state;
-                        }
+                        current.state.next.TryAdd(letter, state);
                     }
                 }
                 return rootState;
