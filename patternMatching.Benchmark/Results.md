@@ -12,6 +12,40 @@ Intel Core i7-8565U CPU 1.80GHz (Whiskey Lake), 1 CPU, 8 logical and 4 physical 
 ## 26 December 2020
 ---
 
+### This Commit
+
+#### Build
+|               Method | WordsInDictionary | WordSize |        Mean |     Error |     StdDev | Ratio | RatioSD |
+|--------------------- |------------------ |--------- |------------:|----------:|-----------:|------:|--------:|
+|           NaiveBuild |                60 |       12 |    31.32 us |  0.602 us |   1.160 us |  0.02 |    0.00 |
+|     AhoCorasickBuild |                60 |       12 |   331.27 us |  1.861 us |   1.741 us |  0.24 |    0.02 |
+|      DoubleTrieBuild |                60 |       12 | 1,298.24 us | 35.287 us | 100.677 us |  1.00 |    0.00 |
+| AhoCorasickFullBuild |                60 |       12 |   359.45 us |  1.501 us |   1.172 us |  0.26 |    0.02 |
+|  DoubleTrieFullBuild |                60 |       12 | 1,352.83 us | 56.461 us | 166.475 us |  1.05 |    0.17 |
+
+#### Search
+|            Method | WordsInDictionary | TextWordCount | WordSize |        Mean |     Error |    StdDev |  Ratio | RatioSD |
+|------------------ |------------------ |-------------- |--------- |------------:|----------:|----------:|-------:|--------:|
+|       NaiveSearch |                60 |           800 |       12 | 63,733.4 us | 595.27 us | 556.82 us | 585.80 |    5.75 |
+| AhoCorasickSearch |                60 |           800 |       12 |    207.1 us |   1.55 us |   1.37 us |   1.90 |    0.02 |
+|   DoubleTrieParse |                60 |           800 |       12 |    108.8 us |   0.58 us |   0.49 us |   1.00 |    0.00 |
+
+#### Memory
+|               Method | WordsInDictionary | WordSize |        Mean |        Error |     StdDev |     Gen 0 |     Gen 1 |    Gen 2 |   Allocated |
+|--------------------- |------------------ |--------- |------------:|-------------:|-----------:|----------:|----------:|---------:|------------:|
+|       NaiveFullBuild |                60 |       12 |    30.09 us |     0.844 us |   0.046 us |    3.4790 |         - |        - |    14.41 KB |
+| AhoCorasickFullBuild |                60 |       12 |   339.52 us |    14.957 us |   0.820 us |   82.0313 |   38.0859 |        - |   457.53 KB |
+|  DoubleTrieFullBuild |                60 |       12 | 1,241.26 us | 1,107.287 us |  60.694 us | 1033.2031 | 1015.6250 | 970.7031 | 19204.24 KB |
+|       NaiveFullBuild |                60 |       24 |    38.14 us |     0.652 us |   0.036 us |    5.0049 |    0.0610 |        - |    20.48 KB |
+| AhoCorasickFullBuild |                60 |       24 | 1,001.79 us |    10.468 us |   0.574 us |  185.5469 |   91.7969 |        - |  1143.09 KB |
+|  DoubleTrieFullBuild |                60 |       24 | 1,696.13 us |    65.352 us |   3.582 us | 1105.4688 | 1091.7969 | 970.7031 | 19523.93 KB |
+|       NaiveFullBuild |               240 |       12 |   320.13 us |    10.972 us |   0.601 us |   14.1602 |    0.4883 |        - |    58.34 KB |
+| AhoCorasickFullBuild |               240 |       12 | 2,039.35 us |   156.842 us |   8.597 us |  296.8750 |  148.4375 |        - |  1828.44 KB |
+|  DoubleTrieFullBuild |               240 |       12 | 2,690.74 us | 6,886.705 us | 377.484 us | 1167.9688 | 1128.9063 | 988.2813 | 19971.74 KB |
+|       NaiveFullBuild |               240 |       24 |   333.22 us |    10.669 us |   0.585 us |   19.5313 |    0.4883 |        - |    81.59 KB |
+| AhoCorasickFullBuild |               240 |       24 | 7,354.22 us | 1,907.810 us | 104.574 us |  734.3750 |  335.9375 | 117.1875 |  4473.06 KB |
+|  DoubleTrieFullBuild |               240 |       24 | 4,666.52 us |   647.087 us |  35.469 us | 1359.3750 | 1328.1250 | 976.5625 | 21216.86 KB |
+
 ### Commit ID _f5fb39b7_
 
 #### Memory

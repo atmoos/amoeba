@@ -17,7 +17,7 @@ namespace patternMatching
         public ISearch<TAlphabet, TOnMatch> Build()
         {
             var (matches, map) = CompileMatchesMap();
-            return new TrieSearch(State.Compile(this.trie, map), matches);
+            return new TrieSearch(State.Compile(in this.trie, in map), matches);
         }
         private (TOnMatch[] matches, Dictionary<Trie<TAlphabet>.Node, Int32> map) CompileMatchesMap()
         {
@@ -35,35 +35,20 @@ namespace patternMatching
         {
             private readonly State root;
             private readonly TOnMatch[] matches;
-            public TrieSearch(State root, TOnMatch[] matches)
-            {
-                this.root = root;
-                this.matches = matches;
-            }
-
+            public TrieSearch(State root, TOnMatch[] matches) => (this.root, this.matches) = (root, matches);
             public IEnumerable<TOnMatch> Search<TText>(TText input)
                 where TText : IEnumerable<TAlphabet>
             {
-                var next = this.root;
+                var state = this.root;
                 foreach(TAlphabet letter in input) {
-                    if(!(next = next.Next(in letter) ?? this.root).HasMatch) {
+                    if(!(state = state.Next(in letter) ?? this.root).HasMatch) {
                         continue;
                     }
-                    foreach(var index in next) {
+                    foreach(var index in state) {
                         yield return this.matches[index];
                     }
                 }
             }
-        }
-        private sealed class Map<TKey, TValue> where TValue : class
-        {
-            private readonly Dictionary<TKey, TValue> map = new Dictionary<TKey, TValue>();
-            public Map(Int32 size) => this.map = new Dictionary<TKey, TValue>(size);
-            public TValue this[in TKey key] {
-                get => this.map.TryGetValue(key, out var value) ? value : null;
-                set => this.map[key] = value;
-            }
-
         }
 
         private sealed class State : IEnumerable<Int32>
@@ -73,15 +58,8 @@ namespace patternMatching
             public readonly Int32 matchIndex = -1;
             public Boolean HasMatch => this.matchIndex >= 0 || this.output != null;
             private State() => this.output = null;
-            private State(State output)
-            {
-                this.output = output;
-            }
-            private State(Int32 matchIndex, State output)
-            {
-                this.output = output;
-                this.matchIndex = matchIndex;
-            }
+            private State(State output) => this.output = output;
+            private State(in Int32 matchIndex, State output) => (this.matchIndex, this.output) = (matchIndex, output);
             public State Next(in TAlphabet letter) => this.next.TryGetValue(letter, out var child) ? child : null;
 
             public IEnumerator<Int32> GetEnumerator()
@@ -95,7 +73,7 @@ namespace patternMatching
 
             System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
             public static State Root(Trie<TAlphabet>.Node root) => new State();
-            public static State Compile(in Trie<TAlphabet> trie, Dictionary<Trie<TAlphabet>.Node, Int32> indexMap)
+            public static State Compile(in Trie<TAlphabet> trie, in Dictionary<Trie<TAlphabet>.Node, Int32> indexMap)
             {
                 var trieRoot = trie.Root;
                 var rootState = State.Root(trieRoot);

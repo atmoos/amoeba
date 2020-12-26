@@ -53,7 +53,7 @@ namespace datastructures
             private readonly Dictionary<TLabel, Node> children;
             public TLabel Label { get; }
             public Boolean MarksEndOfWord { get; } = false;
-            public IEnumerable<(TLabel label, Node node)> Children => this.children.Select(kv => (kv.Key, kv.Value));
+            public IEnumerable<KeyValuePair<TLabel, Node>> Children => this.children;
             private Node() => this.children = new Dictionary<TLabel, Node>();
             private Node(TLabel label, Boolean isEndOfWord) : this() => (Label, MarksEndOfWord) = (label, isEndOfWord);
             private Node(Node node, Boolean isEndOfWord)
