@@ -17,15 +17,15 @@ namespace patternMatching
         }
         public ISearch<TAlphabet, TOnMatch> Build()
         {
-            var root = Node.Compile(this.trie.Root);
+            var root = State.Compile(this.trie.Root);
             return new TrieSearch(root, this.matchValues);
         }
 
         private sealed class TrieSearch : ISearch<TAlphabet, TOnMatch>
         {
-            private readonly Node root;
+            private readonly State root;
             private readonly Dictionary<Node<TAlphabet>, TOnMatch> matchValues = new Dictionary<Node<TAlphabet>, TOnMatch>();
-            public TrieSearch(Node root, Dictionary<Node<TAlphabet>, TOnMatch> matchValues)
+            public TrieSearch(State root, Dictionary<Node<TAlphabet>, TOnMatch> matchValues)
             {
                 this.root = root;
                 this.matchValues = matchValues;
@@ -55,26 +55,25 @@ namespace patternMatching
 
         }
 
-        private sealed class Node : IEnumerable<Node<TAlphabet>>
+        private sealed class State : IEnumerable<Node<TAlphabet>>
         {
-            private readonly Node output;
-            private readonly Node suffix;
+            private readonly State output;
             private readonly Node<TAlphabet> self;
-            private readonly Dictionary<TAlphabet, Node> children;
+            private readonly Dictionary<TAlphabet, State> next;
             public Boolean HasMatch => this.self.MarksEndOfWord || this.output != null;
-            private Node(Node<TAlphabet> self)
+            private State(Node<TAlphabet> self)
             {
                 this.self = self;
-                this.children = new Dictionary<TAlphabet, Node>();
+                this.output = null;
+                this.next = new Dictionary<TAlphabet, State>();
             }
-            private Node(Node<TAlphabet> self, Node suffix, Node output)
+            private State(Node<TAlphabet> self, State output)
             {
                 this.self = self;
-                this.suffix = suffix;
                 this.output = output;
-                this.children = new Dictionary<TAlphabet, Node>();
+                this.next = new Dictionary<TAlphabet, State>();
             }
-            public Node Next(in TAlphabet letter) => this.children.TryGetValue(letter, out var child) ? child : this.suffix?.Next(in letter);
+            public State Next(in TAlphabet letter) => this.next.TryGetValue(letter, out var child) ? child : null;
 
             public IEnumerator<Node<TAlphabet>> GetEnumerator()
             {
@@ -86,16 +85,16 @@ namespace patternMatching
             }
 
             System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
-            public static Node Root(Node<TAlphabet> root) => new Node(root);
-            public static Node Compile(in Node<TAlphabet> trie)
+            public static State Root(Node<TAlphabet> root) => new State(root);
+            public static State Compile(in Node<TAlphabet> trie)
             {
-                var root = Node.Root(trie);
-                var breadthFirstQueue = new Queue<Node>();
-                var nodes = new Map<Node<TAlphabet>, Node>(); // do not add root!
+                var root = State.Root(trie);
+                var breadthFirstQueue = new Queue<State>();
+                var nodes = new Map<Node<TAlphabet>, State>(); // do not add root!
                 var suffixes = new Map<Node<TAlphabet>, Node<TAlphabet>>();
                 foreach(var (letter, child) in trie.Children) {
                     suffixes[child] = trie;
-                    breadthFirstQueue.Enqueue(root.children[letter] = nodes[child] = new Node(child, root, null));
+                    breadthFirstQueue.Enqueue(root.next[letter] = nodes[child] = new State(child));
                 }
                 while(breadthFirstQueue.TryDequeue(out var current)) {
                     foreach(var (letter, child) in current.self.Children) {
@@ -108,8 +107,15 @@ namespace patternMatching
                         while(!output.MarksEndOfWord && output != trie) {
                             output = suffixes[output];
                         }
-                        var newChild = new Node(child, nodes[suffix] ?? root, nodes[output]);
-                        breadthFirstQueue.Enqueue(current.children[letter] = nodes[child] = newChild);
+                        var newChild = new State(child, nodes[output]);
+                        breadthFirstQueue.Enqueue(current.next[letter] = nodes[child] = newChild);
+                    }
+                    Node<TAlphabet> suffixNode = suffixes[current.self];
+                    var suffixState = suffixNode == trie ? root : nodes[suffixNode];
+                    foreach(var (letter, state) in suffixState.next) {
+                        if(!current.next.ContainsKey(letter)) {
+                            current.next[letter] = state;
+                        }
                     }
                 }
                 return root;
