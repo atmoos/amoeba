@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Text;
 using System.Collections.Generic;
 
 namespace patternMatching.Benchmark
@@ -16,6 +17,7 @@ namespace patternMatching.Benchmark
             Dictionary = Words(this.rand, (Int32)(wordSize / 1.4), dictionarySize).Select(w => new String(w.ToArray())).ToList();
         }
         public IEnumerable<Char> Text(Int32 wordCount) => Text(this.rand, this.wordSize, wordCount, ' ');
+        public String TextAsString(Int32 wordCount) => Text(this.rand, this.wordSize, wordCount, ' ').Aggregate(new StringBuilder(), (sb, c) => sb.Append(c)).ToString();
         private IEnumerable<IEnumerable<Char>> Words(Random rand, Int32 wordSize, Int32 wordCount)
         {
             var halfWord = wordSize / 2;

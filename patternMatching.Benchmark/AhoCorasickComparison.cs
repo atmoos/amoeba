@@ -18,7 +18,7 @@ namespace patternMatching.Benchmark
         [Params(24)]
         public Int32 WordSize { get; set; }
 
-        private Char[] text;
+        private String text;
         private ISearch<Char, String> search;
         private AhoCorasickDoubleArrayTrie<String> trie;
 
@@ -29,7 +29,7 @@ namespace patternMatching.Benchmark
             this.search = new AhoCorasick<Char, String>() { source.Dictionary }.Build();
             this.trie = new AhoCorasickDoubleArrayTrie<String>();
             this.trie.Build(source.Dictionary.Select(s => new KeyValuePair<String, String>(s, s)));
-            this.text = source.Text(TextWordCount).ToArray();
+            this.text = source.TextAsString(TextWordCount);
         }
 
         [Benchmark(Baseline = true)]
@@ -37,6 +37,6 @@ namespace patternMatching.Benchmark
 
 
         [Benchmark]
-        public void DoubleAhoCorasickParse() => this.trie.ParseText(this.text, 0, this.text.Length, _ => true);
+        public Object DoubleAhoCorasickParse() => this.trie.ParseText(this.text);
     }
 }

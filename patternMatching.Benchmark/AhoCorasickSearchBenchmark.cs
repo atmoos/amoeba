@@ -2,24 +2,27 @@
 using System.Linq;
 using System.Collections.Generic;
 using BenchmarkDotNet.Attributes;
+using NReco.Text;
 
 namespace patternMatching.Benchmark
 {
-    public class AhoCorasickBenchmark
+    public class AhoCorasickSearchBenchmark
     {
 
         [Params(60)]
         public Int32 WordsInDictionary { get; set; }
 
-        [Params(400)]
+        [Params(800)]
         public Int32 TextWordCount { get; set; }
 
-        [Params(8)]
+        [Params(12)]
         public Int32 WordSize { get; set; }
 
+        private String text;
         private DataSource source;
         private ISearch<Char, String> naive;
         private ISearch<Char, String> aho;
+        private AhoCorasickDoubleArrayTrie<String> doubleTrie;
 
         [GlobalSetup]
         public void Setup()
@@ -27,16 +30,18 @@ namespace patternMatching.Benchmark
             this.source = new DataSource(WordSize, WordsInDictionary);
             this.aho = new AhoCorasick<Char, String>() { this.source.Dictionary }.Build();
             this.naive = new Naive.MultiPatternSearch<Char, String> { this.source.Dictionary }.Build();
+            this.doubleTrie = new AhoCorasickDoubleArrayTrie<String>(this.source.Dictionary.Select(s => new KeyValuePair<String, String>(s, s)));
+            this.text = source.TextAsString(TextWordCount);
         }
 
+        [Benchmark]
+
+        public List<String> NaiveSearch() => this.naive.Search(this.text).ToList();
+
+        [Benchmark]
+        public List<String> AhoCorasickSearch() => this.aho.Search(this.text).ToList();
+
         [Benchmark(Baseline = true)]
-
-        public List<String> NaiveSearch() => this.naive.Search(this.source.Text(TextWordCount / 50)).ToList();
-
-        [Benchmark]
-        public ISearch<Char, String> Building() => new AhoCorasick<Char, String>() { source.Dictionary }.Build();
-
-        [Benchmark]
-        public List<String> Searching() => this.aho.Search(this.source.Text(TextWordCount)).ToList();
+        public Object DoubleTrieParse() => this.doubleTrie.ParseText(this.text);
     }
 }
