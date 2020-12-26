@@ -13,6 +13,24 @@ Intel Core i7-8565U CPU 1.80GHz (Whiskey Lake), 1 CPU, 8 logical and 4 physical 
 
 ### This Commit
 
+### Memory
+|               Method | WordsInDictionary | WordSize |        Mean |        Error |     StdDev |     Gen 0 |     Gen 1 |    Gen 2 |   Allocated |
+|--------------------- |------------------ |--------- |------------:|-------------:|-----------:|----------:|----------:|---------:|------------:|
+|       NaiveFullBuild |                60 |       12 |    29.25 us |     1.768 us |   0.097 us |    3.4790 |    0.0610 |        - |    14.41 KB |
+| AhoCorasickFullBuild |                60 |       12 |   389.48 us |     6.462 us |   0.354 us |   82.5195 |   41.0156 |        - |   478.47 KB |
+|  DoubleTrieFullBuild |                60 |       12 | 1,384.10 us |   249.831 us |  13.694 us | 1011.7188 |  986.3281 | 949.2188 | 19204.04 KB |
+|       NaiveFullBuild |                60 |       24 |    36.35 us |     2.507 us |   0.137 us |    5.0049 |    0.0610 |        - |    20.48 KB |
+| AhoCorasickFullBuild |                60 |       24 | 1,159.92 us |    84.507 us |   4.632 us |  195.3125 |   97.6563 |        - |  1195.78 KB |
+|  DoubleTrieFullBuild |                60 |       24 | 1,763.77 us |   318.993 us |  17.485 us | 1130.8594 | 1111.3281 | 994.1406 | 19523.93 KB |
+|       NaiveFullBuild |               240 |       12 |   310.25 us |    12.685 us |   0.695 us |   14.1602 |    0.4883 |        - |    58.34 KB |
+| AhoCorasickFullBuild |               240 |       12 | 2,300.43 us |   101.034 us |   5.538 us |  312.5000 |  156.2500 |        - |  1911.56 KB |
+|  DoubleTrieFullBuild |               240 |       12 | 2,929.03 us | 2,977.755 us | 163.221 us | 1187.5000 | 1089.8438 | 988.2813 | 19971.74 KB |
+|       NaiveFullBuild |               240 |       24 |   331.87 us |     4.808 us |   0.264 us |   19.5313 |         - |        - |    81.59 KB |
+| AhoCorasickFullBuild |               240 |       24 | __8,686.82__ us |   646.092 us |  35.414 us |  781.2500 |  375.0000 | 156.2500 |  4679.63 KB |
+|  DoubleTrieFullBuild |               240 |       24 | 4,582.92 us |   183.081 us |  10.035 us | 1359.3750 | 1328.1250 | 976.5625 | 21216.86 KB |
+
+### Commit ID _5c1d914a_
+
 #### Build
 |               Method | WordsInDictionary | WordSize |        Mean |     Error |     StdDev |      Median | Ratio | RatioSD |
 |--------------------- |------------------ |--------- |------------:|----------:|-----------:|------------:|------:|--------:|

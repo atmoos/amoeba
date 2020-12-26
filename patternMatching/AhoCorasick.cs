@@ -17,7 +17,7 @@ namespace patternMatching
         public ISearch<TAlphabet, TOnMatch> Build()
         {
             var (matches, map) = CompileMatchesMap();
-            return new TrieSearch(State.Compile(this.trie.Root, map), matches);
+            return new TrieSearch(State.Compile(this.trie, map), matches);
         }
         private (TOnMatch[] matches, Dictionary<Trie<TAlphabet>.Node, Int32> map) CompileMatchesMap()
         {
@@ -59,6 +59,7 @@ namespace patternMatching
         private sealed class Map<TKey, TValue> where TValue : class
         {
             private readonly Dictionary<TKey, TValue> map = new Dictionary<TKey, TValue>();
+            public Map(Int32 size) => this.map = new Dictionary<TKey, TValue>(size);
             public TValue this[in TKey key] {
                 get => this.map.TryGetValue(key, out var value) ? value : null;
                 set => this.map[key] = value;
@@ -95,39 +96,40 @@ namespace patternMatching
 
             System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
             public static State Root(Trie<TAlphabet>.Node root) => new State();
-            public static State Compile(in Trie<TAlphabet>.Node trie, Dictionary<Trie<TAlphabet>.Node, Int32> indexMap)
+            public static State Compile(in Trie<TAlphabet> trie, Dictionary<Trie<TAlphabet>.Node, Int32> indexMap)
             {
-                var root = State.Root(trie);
+                var trieRoot = trie.Root;
+                var rootState = State.Root(trieRoot);
                 var breadthFirstQueue = new Queue<(State state, Trie<TAlphabet>.Node node)>();
-                var nodes = new Map<Trie<TAlphabet>.Node, State>(); // do not add root!
-                var suffixes = new Map<Trie<TAlphabet>.Node, Trie<TAlphabet>.Node>();
-                foreach(var (letter, child) in trie.Children) {
-                    suffixes[child] = trie;
-                    breadthFirstQueue.Enqueue((root.next[letter] = nodes[child] = Create(in indexMap, in child, null), child));
+                var nodes = new Map<Trie<TAlphabet>.Node, State>(trie.Size); // do not add root!
+                var suffixes = new Map<Trie<TAlphabet>.Node, Trie<TAlphabet>.Node>(trie.Size);
+                foreach(var (letter, child) in trieRoot.Children) {
+                    suffixes[child] = trieRoot;
+                    breadthFirstQueue.Enqueue((rootState.next[letter] = nodes[child] = Create(in indexMap, in child, null), child));
                 }
                 while(breadthFirstQueue.TryDequeue(out var current)) {
                     foreach(var (letter, child) in current.node.Children) {
                         Trie<TAlphabet>.Node probe;
                         var suffix = suffixes[current.node];
-                        while((probe = suffix.Next(in letter)) == null && suffix != trie) {
+                        while((probe = suffix.Next(in letter)) == null && suffix != trieRoot) {
                             suffix = suffixes[suffix];
                         }
-                        var output = suffix = suffixes[child] = probe ?? trie;
-                        while(!output.MarksEndOfWord && output != trie) {
+                        var output = suffix = suffixes[child] = probe ?? trieRoot;
+                        while(!output.MarksEndOfWord && output != trieRoot) {
                             output = suffixes[output];
                         }
                         var newChild = current.state.next[letter] = nodes[child] = Create(indexMap, child, nodes[output]);
                         breadthFirstQueue.Enqueue((newChild, child));
                     }
                     Trie<TAlphabet>.Node suffixNode = suffixes[current.node];
-                    var suffixState = suffixNode == trie ? root : nodes[suffixNode];
+                    var suffixState = suffixNode == trieRoot ? rootState : nodes[suffixNode];
                     foreach(var (letter, state) in suffixState.next) {
                         if(!current.state.next.ContainsKey(letter)) {
                             current.state.next[letter] = state;
                         }
                     }
                 }
-                return root;
+                return rootState;
             }
 
             private static State Create(in Dictionary<Trie<TAlphabet>.Node, Int32> indexMap, in Trie<TAlphabet>.Node node, in State output)

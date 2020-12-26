@@ -7,9 +7,10 @@ namespace datastructures
 {
     public sealed class Trie<TLabel> : IEnumerable
     {
+        private Int32 size;
         private readonly Node root = Node.Root();
-
         public Node Root => this.root;
+        public Int32 Size => this.size;
         public void Add(IEnumerable<TLabel> key) => AddKey(key);
         public void Add<TKey>(IEnumerable<TKey> keys)
             where TKey : IEnumerable<TLabel>
@@ -27,9 +28,9 @@ namespace datastructures
                     next = (this.root, label);
                     continue;
                 }
-                next = (next.node.Add(next.label), label);
+                next = (next.node.Add(next.label, ref this.size), label);
             }
-            return next.node.AddEnd(next.label);
+            return next.node.AddEnd(next.label, ref this.size);
         }
         internal Node FindKey(IEnumerable<TLabel> key)
         {
@@ -63,14 +64,15 @@ namespace datastructures
                 MarksEndOfWord = isEndOfWord;
                 this.children = node.children;
             }
-            internal Node Add(in TLabel label)
+            internal Node Add(in TLabel label, ref Int32 counter)
             {
                 if(this.children.TryGetValue(label, out var child)) {
                     return child;
                 }
+                counter++;
                 return this.children[label] = new Node(label, false);
             }
-            internal Node AddEnd(in TLabel label)
+            internal Node AddEnd(in TLabel label, ref Int32 counter)
             {
                 if(this.children.TryGetValue(label, out var child)) {
                     if(child.MarksEndOfWord) {
@@ -78,6 +80,7 @@ namespace datastructures
                     }
                     return this.children[label] = new Node(child, true);
                 }
+                counter++;
                 return this.children[label] = new Node(label, true);
             }
             public Node Next(in TLabel label) => this.children.TryGetValue(label, out var child) ? child : null;
