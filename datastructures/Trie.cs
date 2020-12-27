@@ -48,12 +48,12 @@ namespace datastructures
             // Implemented in order to enable the collection initialiser.
             throw new NotImplementedException("This method is not meant to be called.");
         }
-        public sealed class Node : IEnumerable<Node>
+        public sealed class Node : IEnumerable<KeyValuePair<TLabel, Node>>
         {
             private readonly Dictionary<TLabel, Node> children;
             public TLabel Label { get; }
             public Boolean MarksEndOfWord { get; } = false;
-            public IEnumerable<KeyValuePair<TLabel, Node>> Children => this.children;
+            public Int32 Count => this.children.Count;
             private Node() => this.children = new Dictionary<TLabel, Node>();
             private Node(TLabel label, Boolean isEndOfWord) : this() => (Label, MarksEndOfWord) = (label, isEndOfWord);
             private Node(Node node, Boolean isEndOfWord)
@@ -94,7 +94,7 @@ namespace datastructures
             }
             internal static Node Root() => new Node();
 
-            public IEnumerator<Node> GetEnumerator() => this.children.Values.SelectMany(c => c.children.Values).GetEnumerator();
+            public IEnumerator<KeyValuePair<TLabel, Node>> GetEnumerator() => this.children.GetEnumerator();
 
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         }

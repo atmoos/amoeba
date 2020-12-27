@@ -9,10 +9,31 @@ Intel Core i7-8565U CPU 1.80GHz (Whiskey Lake), 1 CPU, 8 logical and 4 physical 
   DefaultJob : .NET Core 3.1.8 (CoreCLR 4.700.20.41105, CoreFX 4.700.20.41903), X64 RyuJIT
 ```
 
-## 26 December 2020
+## 27 December 2020
 ---
 
 ### This Commit
+
+#### Memory
+|               Method | WordsInDictionary | WordSize |        Mean |        Error |     StdDev |     Gen 0 |     Gen 1 |    Gen 2 |   Allocated |
+|--------------------- |------------------ |--------- |------------:|-------------:|-----------:|----------:|----------:|---------:|------------:|
+|       NaiveFullBuild |                60 |       12 |    29.44 us |     0.851 us |   0.047 us |    3.4790 |    0.0610 |        - |    14.41 KB |
+| AhoCorasickFullBuild |                60 |       12 |   287.20 us |     6.971 us |   0.382 us |   57.1289 |   27.3438 |        - |   323.81 KB |
+|  DoubleTrieFullBuild |                60 |       12 | 1,154.04 us |   378.446 us |  20.744 us | 1048.8281 | 1028.3203 | 985.3516 | 19204.24 KB |
+|       NaiveFullBuild |                60 |       24 |    37.80 us |    16.402 us |   0.899 us |    5.0049 |    0.0610 |        - |    20.48 KB |
+| AhoCorasickFullBuild |                60 |       24 |   829.01 us |    42.729 us |   2.342 us |  135.7422 |   67.3828 |        - |   830.77 KB |
+|  DoubleTrieFullBuild |                60 |       24 | 1,599.68 us | 3,352.518 us | 183.763 us | 1128.9063 | 1123.0469 | 994.1406 | 19523.91 KB |
+|       NaiveFullBuild |               240 |       12 |   316.18 us |     1.782 us |   0.098 us |   14.1602 |    0.4883 |        - |    58.34 KB |
+| AhoCorasickFullBuild |               240 |       12 | 1,548.91 us |   382.361 us |  20.959 us |  207.0313 |  103.5156 |        - |     1270 KB |
+|  DoubleTrieFullBuild |               240 |       12 | 2,905.61 us | 3,721.127 us | 203.968 us | 1234.3750 |  988.2813 | 988.2813 | 19971.75 KB |
+|       NaiveFullBuild |               240 |       24 |   320.92 us |     6.176 us |   0.339 us |   19.5313 |         - |        - |    81.59 KB |
+| AhoCorasickFullBuild |               240 |       24 | 4,995.45 us |   246.551 us |  13.514 us |  507.8125 |  250.0000 |        - |  3114.55 KB |
+|  DoubleTrieFullBuild |               240 |       24 | 4,643.54 us | 1,271.333 us |  69.686 us | 1359.3750 | 1335.9375 | 976.5625 | 21216.93 KB |
+
+## 26 December 2020
+---
+
+### Commit ID _dbe81fb7_
 
 #### Build
 |               Method | WordsInDictionary | WordSize |        Mean |     Error |     StdDev | Ratio | RatioSD |
