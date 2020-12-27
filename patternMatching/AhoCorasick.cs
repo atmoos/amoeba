@@ -41,11 +41,10 @@ namespace patternMatching
             {
                 var state = this.root;
                 foreach(TAlphabet letter in input) {
-                    if(!(state = state.Next(in letter) ?? this.root).HasMatch) {
-                        continue;
-                    }
-                    foreach(var index in state) {
-                        yield return this.matches[index];
+                    if((state = state.Next(in letter) ?? this.root).HasMatch) {
+                        foreach(var index in state) {
+                            yield return this.matches[index];
+                        }
                     }
                 }
             }

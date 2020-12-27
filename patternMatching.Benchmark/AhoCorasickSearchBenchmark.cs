@@ -9,18 +9,17 @@ namespace patternMatching.Benchmark
     public class AhoCorasickSearchBenchmark
     {
 
-        [Params(60)]
+        [Params(60, 120)]
         public Int32 WordsInDictionary { get; set; }
 
         [Params(800)]
         public Int32 TextWordCount { get; set; }
 
-        [Params(12)]
+        [Params(12, 36)]
         public Int32 WordSize { get; set; }
 
         private String text;
         private DataSource source;
-        private ISearch<Char, String> naive;
         private ISearch<Char, String> aho;
         private AhoCorasickDoubleArrayTrie<String> doubleTrie;
 
@@ -29,14 +28,9 @@ namespace patternMatching.Benchmark
         {
             this.source = new DataSource(WordSize, WordsInDictionary);
             this.aho = new AhoCorasick<Char, String>() { this.source.Dictionary }.Build();
-            this.naive = new Naive.MultiPatternSearch<Char, String> { this.source.Dictionary }.Build();
             this.doubleTrie = new AhoCorasickDoubleArrayTrie<String>(this.source.Dictionary.Select(s => new KeyValuePair<String, String>(s, s)));
             this.text = source.TextAsString(TextWordCount);
         }
-
-        [Benchmark]
-
-        public List<String> NaiveSearch() => this.naive.Search(this.text).ToList();
 
         [Benchmark]
         public List<String> AhoCorasickSearch() => this.aho.Search(this.text).ToList();
