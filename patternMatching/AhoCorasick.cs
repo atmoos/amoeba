@@ -53,17 +53,13 @@ namespace patternMatching
         private sealed class State : IEnumerable<Int32>
         {
             private readonly State output;
+            private readonly Int32 matchIndex = -1;
             private readonly Dictionary<TAlphabet, State> next;
-            public readonly Int32 matchIndex = -1;
             public Boolean HasMatch => this.matchIndex >= 0 || this.output != null;
             private State(in Int32 capacity) : this(null, in capacity) { }
-            private State(State output, in Int32 capacity)
-            {
-                this.output = output;
-                this.next = new Dictionary<TAlphabet, State>(capacity);
-            }
+            private State(State output, in Int32 capacity) => (this.output, this.next) = (output, new Dictionary<TAlphabet, State>(capacity));
             private State(in Int32 matchIndex, State output, Int32 capacity) : this(output, in capacity) => this.matchIndex = matchIndex;
-            public State Next(in TAlphabet letter) => this.next.TryGetValue(letter, out var child) ? child : null;
+            public State Next(in TAlphabet letter) => this.next.TryGetValue(letter, out var nextState) ? nextState : null;
 
             public IEnumerator<Int32> GetEnumerator()
             {
@@ -75,6 +71,14 @@ namespace patternMatching
             }
 
             System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+            private void Merge(State suffix)
+            {
+                foreach(var (letter, state) in suffix.next) {
+                    this.next.TryAdd(letter, state);
+                }
+                this.next.TrimExcess();
+            }
+
             public static State Root(in Int32 capacity) => new State(capacity);
             public static State Compile(in Trie<TAlphabet> trie, in Dictionary<Trie<TAlphabet>.Node, Int32> indexMap)
             {
@@ -103,18 +107,13 @@ namespace patternMatching
                         breadthFirstQueue.Enqueue((newChild, child));
                     }
                     // Flatten the trie such that each state has all next states, given a known letter.
-                    var suffixState = currentSuffix == trieRoot ? rootState : nodes[currentSuffix];
-                    // ToDo: Create proper merge function on State class ;-)
-                    current.state.next.EnsureCapacity(suffixState.next.Count);
-                    foreach(var (letter, state) in suffixState.next) {
-                        current.state.next.TryAdd(letter, state);
-                    }
+                    current.state.Merge(currentSuffix == trieRoot ? rootState : nodes[currentSuffix]);
                 }
                 return rootState;
             }
             private static State Create(in Dictionary<Trie<TAlphabet>.Node, Int32> indexMap, in Trie<TAlphabet>.Node node, in State output, in Int32 suffixCapacity)
             {
-                var initialCapacity = node.Count + suffixCapacity;
+                var initialCapacity = node.Count + (Int32)(0.33 * Math.Sqrt(node.Count * suffixCapacity)); // allow an excess of one third the geometric mean.
                 return node.MarksEndOfWord ? new State(indexMap[node], output, initialCapacity) : new State(output, initialCapacity);
             }
         }

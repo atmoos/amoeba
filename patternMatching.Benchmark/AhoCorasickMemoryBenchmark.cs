@@ -29,10 +29,10 @@ namespace patternMatching.Benchmark
 
         [Benchmark]
 
-        public ISearch<Char, String> NaiveFullBuild() => new Naive.MultiPatternSearch<Char, String> { source.Dictionary }.Build();
+        public ISearch<Char, String> NaiveFullBuild() => new Naive.MultiPatternSearch<Char, String> { this.source.Dictionary }.Build();
 
         [Benchmark]
-        public ISearch<Char, String> AhoCorasickFullBuild() => new AhoCorasick<Char, String> { source.Dictionary }.Build();
+        public ISearch<Char, String> AhoCorasickFullBuild() => new AhoCorasick<Char, String> { this.source.Dictionary }.Build();
 
         [Benchmark]
         public AhoCorasickDoubleArrayTrie<String> DoubleTrieFullBuild() => new AhoCorasickDoubleArrayTrie<String>(this.doubleTrieDict);
