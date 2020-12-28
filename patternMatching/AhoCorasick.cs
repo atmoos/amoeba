@@ -84,16 +84,18 @@ namespace patternMatching
             {
                 var trieRoot = trie.Root;
                 var rootState = State.Root(trieRoot.Count);
-                var breadthFirstQueue = new Queue<(State state, Trie<TAlphabet>.Node node)>();
+                var breadthFirstQueue = new Queue<Trie<TAlphabet>.Node>();
                 var nodes = new Map<Trie<TAlphabet>.Node, State>(trie.Size); // do not add root!
                 var suffixes = new Map<Trie<TAlphabet>.Node, Trie<TAlphabet>.Node>(trie.Size);
                 foreach(var (letter, child) in trieRoot) {
                     suffixes[child] = trieRoot;
-                    breadthFirstQueue.Enqueue((rootState.next[letter] = nodes[child] = Create(in indexMap, in child, null, trieRoot.Count), child));
+                    rootState.next[letter] = nodes[child] = Create(in indexMap, in child, null, trieRoot.Count);
+                    breadthFirstQueue.Enqueue(child);
                 }
-                while(breadthFirstQueue.TryDequeue(out var current)) {
-                    var currentSuffix = suffixes[current.node];
-                    foreach(var (letter, child) in current.node) {
+                while(breadthFirstQueue.TryDequeue(out var node)) {
+                    var current = nodes[node];
+                    var currentSuffix = suffixes[node];
+                    foreach(var (letter, child) in node) {
                         Trie<TAlphabet>.Node probe;
                         var suffix = currentSuffix;
                         while((probe = suffix.Next(in letter)) == null && suffix != trieRoot) {
@@ -103,11 +105,11 @@ namespace patternMatching
                         while(!output.MarksEndOfWord && output != trieRoot) {
                             output = suffixes[output];
                         }
-                        var newChild = current.state.next[letter] = nodes[child] = Create(in indexMap, in child, nodes[output], suffix.Count);
-                        breadthFirstQueue.Enqueue((newChild, child));
+                        current.next[letter] = nodes[child] = Create(in indexMap, in child, nodes[output], suffix.Count);
+                        breadthFirstQueue.Enqueue(child);
                     }
                     // Flatten the trie such that each state has all next states, given a known letter.
-                    current.state.Merge(currentSuffix == trieRoot ? rootState : nodes[currentSuffix]);
+                    current.Merge(currentSuffix == trieRoot ? rootState : nodes[currentSuffix]);
                 }
                 return rootState;
             }
