@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using System.Text;
+using System.Collections.Generic;
 using Xunit;
 
 namespace datastructures.Tests
@@ -52,6 +54,22 @@ namespace datastructures.Tests
 
             Assert.InRange(trie.Size, words.Length, charCount);
         }
+
+        [Fact]
+        public void BreadthFirstWalkReturnsRows()
+        {
+            var words = Words("tag", "tail", "tap", "today", "total", "well", "went");
+            var rows = Words("tw", "aoe", "gipdtln", "laalt", "yl");
+            var trie = new Trie<Char> { words };
+
+            var actualRows = ToStrings(trie.WalkBreadthFirst());
+
+            Assert.Equal(rows, actualRows);
+        }
         private static String[] Words(params String[] words) => words;
+        private static String[] ToStrings(IEnumerable<IEnumerable<Trie<Char>.Node>> nodes)
+        {
+            return nodes.Select(n => n.Aggregate(new StringBuilder(), (sb, l) => sb.Append(l.Label)).ToString()).ToArray();
+        }
     }
 }
