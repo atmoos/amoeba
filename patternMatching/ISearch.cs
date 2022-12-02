@@ -1,9 +1,8 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
-namespace patternMatching
+namespace patternMatching;
+
+public interface ISearch<TAlphabet, TSearchOutput>
 {
-    public interface ISearch<TAlphabet, TSearchOutput>
-    {
-        IEnumerable<TSearchOutput> Search<TText>(TText input) where TText : IEnumerable<TAlphabet>;
-    }
+    IEnumerable<TSearchOutput> Search<TText>(TText input) where TText : IEnumerable<TAlphabet>;
 }

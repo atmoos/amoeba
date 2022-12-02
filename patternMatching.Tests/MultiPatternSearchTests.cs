@@ -1,8 +1,7 @@
-using System;
+﻿using System;
 
-namespace patternMatching.Tests
+namespace patternMatching.Tests;
+
+public sealed class MultiPatternSearchTests : TestSearchAlgorithm<Naive.MultiPatternSearch<Char, String>>
 {
-    public sealed class MultiPatternSearchTests : TestSearchAlgorithm<Naive.MultiPatternSearch<Char, String>>
-    {
-    }
 }

@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <PropertyGroup>
@@ -12,8 +12,8 @@
     <Configuration>Release</Configuration>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
-    <PackageReference Include="NReco.Text.AhoCorasickDoubleArrayTrie" Version="1.0.2" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.13.2" />
+    <PackageReference Include="NReco.Text.AhoCorasickDoubleArrayTrie" Version="1.1.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\patternMatching\patternMatching.csproj" />
