@@ -9,8 +9,8 @@ namespace patternMatching;
 // https://iq.opengenus.org/aho-corasick-algorithm/
 public sealed class AhoCorasick<TAlphabet, TOnMatch> : ISearchBuilder<TAlphabet, TOnMatch>
 {
-    private readonly Trie<TAlphabet> trie = new Trie<TAlphabet>();
-    private readonly Dictionary<Trie<TAlphabet>.Node, TOnMatch> matchValues = new Dictionary<Trie<TAlphabet>.Node, TOnMatch>();
+    private readonly Trie<TAlphabet> trie = new();
+    private readonly Dictionary<Trie<TAlphabet>.Node, TOnMatch> matchValues = new();
     public void Add(IEnumerable<TAlphabet> pattern, in TOnMatch onMatch)
     {
         this.matchValues[this.trie.AddKey(pattern)] = onMatch;
@@ -53,14 +53,14 @@ public sealed class AhoCorasick<TAlphabet, TOnMatch> : ISearchBuilder<TAlphabet,
 
     private sealed class State : IEnumerable<Int32>
     {
-        private readonly State output;
+        private readonly State? output;
         private readonly Int32 matchIndex = -1;
         private readonly Dictionary<TAlphabet, State> next;
         public Boolean HasMatch => this.matchIndex >= 0 || this.output != null;
         private State(in Int32 capacity) : this(null, in capacity) { }
-        private State(State output, in Int32 capacity) => (this.output, this.next) = (output, new Dictionary<TAlphabet, State>(capacity));
-        private State(in Int32 matchIndex, State output, Int32 capacity) : this(output, in capacity) => this.matchIndex = matchIndex;
-        public State Next(in TAlphabet letter) => this.next.TryGetValue(letter, out var nextState) ? nextState : null;
+        private State(State? output, in Int32 capacity) => (this.output, this.next) = (output, new Dictionary<TAlphabet, State>(capacity));
+        private State(in Int32 matchIndex, State? output, Int32 capacity) : this(output, in capacity) => this.matchIndex = matchIndex;
+        public State? Next(in TAlphabet letter) => this.next.TryGetValue(letter, out var nextState) ? nextState : null;
 
         public IEnumerator<Int32> GetEnumerator()
         {
@@ -80,11 +80,11 @@ public sealed class AhoCorasick<TAlphabet, TOnMatch> : ISearchBuilder<TAlphabet,
             this.next.TrimExcess();
         }
 
-        public static State Root(in Int32 capacity) => new State(capacity);
+        public static State Root(in Int32 capacity) => new(capacity);
         public static State Compile(in Trie<TAlphabet> trie, in Dictionary<Trie<TAlphabet>.Node, Int32> indexMap)
         {
             var trieRoot = trie.Root;
-            var rootState = State.Root(trieRoot.Count);
+            var rootState = Root(trieRoot.Count);
             var breadthFirstQueue = new Queue<Trie<TAlphabet>.Node>();
             var nodes = new Map<Trie<TAlphabet>.Node, State>(trie.Size); // do not add root!
             var suffixes = new Map<Trie<TAlphabet>.Node, Trie<TAlphabet>.Node>(trie.Size);
@@ -114,7 +114,7 @@ public sealed class AhoCorasick<TAlphabet, TOnMatch> : ISearchBuilder<TAlphabet,
             }
             return rootState;
         }
-        private static State Create(in Dictionary<Trie<TAlphabet>.Node, Int32> indexMap, in Trie<TAlphabet>.Node node, in State output, in Int32 suffixCapacity)
+        private static State Create(in Dictionary<Trie<TAlphabet>.Node, Int32> indexMap, in Trie<TAlphabet>.Node node, in State? output, in Int32 suffixCapacity)
         {
             var initialCapacity = node.Count + (Int32)(0.33 * Math.Sqrt(node.Count * suffixCapacity)); // allow an excess of one third the geometric mean.
             return node.MarksEndOfWord ? new State(indexMap[node], output, initialCapacity) : new State(output, initialCapacity);

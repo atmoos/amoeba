@@ -7,7 +7,7 @@ namespace patternMatching.Naive;
 public sealed class MultiPatternSearch<TAlphabet, TMatch> : ISearchBuilder<TAlphabet, TMatch>
     where TAlphabet : IEquatable<TAlphabet>
 {
-    private readonly List<(IEnumerable<TAlphabet>, TMatch)> dictionary = new List<(IEnumerable<TAlphabet>, TMatch)>();
+    private readonly List<(IEnumerable<TAlphabet>, TMatch)> dictionary = new();
     public void Add(IEnumerable<TAlphabet> pattern, in TMatch match) => this.dictionary.Add((pattern, match));
     public ISearch<TAlphabet, TMatch> Build() => new NaiveSearch(GuardForKeyCollisions(this.dictionary));
     private static List<(Scan pattern, TMatch match)> GuardForKeyCollisions(IEnumerable<(IEnumerable<TAlphabet> pattern, TMatch match)> dictionary)
@@ -57,7 +57,7 @@ public sealed class MultiPatternSearch<TAlphabet, TMatch> : ISearchBuilder<TAlph
                         }
                     }
                 }
-                Scan next = null;
+                Scan? next = null;
                 if (searches.Count >= max) {
                     next = searches.Dequeue();
                     next.Clear();

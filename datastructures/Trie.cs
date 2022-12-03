@@ -43,16 +43,16 @@ public sealed class Trie<TLabel> : IEnumerable
         return child;
     }
 
-    public IEnumerable<IEnumerable<Trie<TLabel>.Node>> WalkBreadthFirst()
+    public IEnumerable<IEnumerable<Node>> WalkBreadthFirst()
     {
         foreach (var row in BreadthFirst(this.root).GroupBy(e => e.level)) {
             yield return row.Select(d => d.node);
         }
     }
 
-    private static IEnumerable<(Int32 level, Trie<TLabel>.Node node)> BreadthFirst(Trie<TLabel>.Node root)
+    private static IEnumerable<(Int32 level, Node node)> BreadthFirst(Node root)
     {
-        var queue = new Queue<(Int32 level, Trie<TLabel>.Node node)>(root.Select(c => (1, c.Value)));
+        var queue = new Queue<(Int32 level, Node node)>(root.Select(c => (1, c.Value)));
         while (queue.TryDequeue(out var element)) {
             var level = element.level + 1;
             foreach (var (_, child) in element.node) {
@@ -111,7 +111,7 @@ public sealed class Trie<TLabel> : IEnumerable
             }
             return $"{String.Join(";", this.children.Keys)}{mark}";
         }
-        internal static Node Root() => new Node();
+        internal static Node Root() => new();
 
         public IEnumerator<KeyValuePair<TLabel, Node>> GetEnumerator() => this.children.GetEnumerator();
 

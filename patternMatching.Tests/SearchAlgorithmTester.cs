@@ -5,10 +5,10 @@ using Xunit;
 
 namespace patternMatching.Tests;
 
-public abstract class TestSearchAlgorithm<TSearch>
+public sealed class SearchAlgorithmTester<TSearch> : ITestSearchAlgorithm
     where TSearch : ISearchBuilder<Char, String>, new()
 {
-    [Fact]
+
     public void NoMatchReturnsAnEmptyEnumerable()
     {
         var trie = SearchFor("One", "two");
@@ -18,7 +18,6 @@ public abstract class TestSearchAlgorithm<TSearch>
         Assert.Equal(Enumerable.Empty<String>(), match);
     }
 
-    [Fact]
     public void DuplicatePatternEntriesDoesNotCauseDuplicateMatches()
     {
         var trie = SearchFor("one", "two", "two", "three");
@@ -28,7 +27,6 @@ public abstract class TestSearchAlgorithm<TSearch>
         Assert.Equal(Result("one", "two", "three"), match);
     }
 
-    [Fact]
     public void SearchMatchesOneOccurrenceAtTheBeginning()
     {
         var trie = SearchFor("ab");
@@ -38,7 +36,6 @@ public abstract class TestSearchAlgorithm<TSearch>
         Assert.Equal(Result("ab"), match);
     }
 
-    [Fact]
     public void SearchMatchesOneOccurrenceInTheCenter()
     {
         var trie = SearchFor("ab");
@@ -48,7 +45,6 @@ public abstract class TestSearchAlgorithm<TSearch>
         Assert.Equal(Result("ab"), match);
     }
 
-    [Fact]
     public void SearchMatchesOneOccurrenceAtTheEnd()
     {
         var trie = SearchFor("act");
@@ -58,7 +54,6 @@ public abstract class TestSearchAlgorithm<TSearch>
         Assert.Equal(Result("act"), match);
     }
 
-    [Fact]
     public void SearchMatchesEachOccurrenceOnce()
     {
         var trie = SearchFor("Fliegen");
@@ -67,7 +62,6 @@ public abstract class TestSearchAlgorithm<TSearch>
 
         Assert.Equal(Result("Fliegen", "Fliegen", "Fliegen", "Fliegen"), match);
     }
-    [Fact]
     public void SearchMatchesTwoSeparatedPatterns()
     {
         var trie = SearchFor("lee", "luv");
@@ -77,7 +71,6 @@ public abstract class TestSearchAlgorithm<TSearch>
         Assert.Equal(Result("luv", "lee"), match);
     }
 
-    [Fact]
     public void SearchMatchesAdjacentSuffixPatterns()
     {
         var trie = SearchFor("lee", "leeward");
@@ -87,7 +80,6 @@ public abstract class TestSearchAlgorithm<TSearch>
         Assert.Equal(Result("lee", "leeward"), match);
     }
 
-    [Fact]
     public void SearchMatchesAdjacentPostfixPatterns()
     {
         var trie = SearchFor("ward", "leeward");
@@ -97,7 +89,6 @@ public abstract class TestSearchAlgorithm<TSearch>
         Assert.Equal(Result("leeward", "ward"), match);
     }
 
-    [Fact]
     public void SearchMatchesOverlappingSuffixPatterns()
     {
         var trie = SearchFor("ton", "pontons");
@@ -107,7 +98,6 @@ public abstract class TestSearchAlgorithm<TSearch>
         Assert.Equal(Result("ton", "pontons"), match);
     }
 
-    [Fact]
     public void SearchMatchesAreReturnedInTheOrderTheyAppearInTheSearchText()
     {
         var trie = SearchFor("seven", "five", "eight", "six");
@@ -117,7 +107,6 @@ public abstract class TestSearchAlgorithm<TSearch>
         Assert.Equal(Result("five", "six", "seven", "eight"), match);
     }
 
-    [Fact]
     public void InterleavedPatternsAreResolved()
     {
         var trie = SearchFor("in", "tin", "sting");
@@ -127,7 +116,6 @@ public abstract class TestSearchAlgorithm<TSearch>
         Assert.Equal(Result("tin", "in", "in", "tin", "in", "sting"), match);
     }
 
-    [Fact]
     public void IndexesInSourceStringAreFound()
     {
         const String sourceString = "a tin in a stinger";
@@ -139,8 +127,6 @@ public abstract class TestSearchAlgorithm<TSearch>
     }
 
 
-
-    [Fact]
     public void SuffixIsSetToRootWhenNoProperSuffixIsFound()
     {
         // This is a minimal test!
@@ -151,7 +137,6 @@ public abstract class TestSearchAlgorithm<TSearch>
 
         Assert.Equal(Result("18", "3"), match);
     }
-    [Fact]
     public void TheImmediateChildrenOfRootMustBeAssignedRootAsSuffix()
     {
         // This is a minimal test!
@@ -163,14 +148,14 @@ public abstract class TestSearchAlgorithm<TSearch>
         Assert.Equal(Result("36"), match);
     }
 
-    protected static void AssertMatchesAreIn(String sourceString, IEnumerable<(UInt64 position, String match)> matches)
+    private static void AssertMatchesAreIn(String sourceString, IEnumerable<(UInt64 position, String match)> matches)
     {
         foreach (var (position, segment) in matches) {
             Assert.Equal(segment, sourceString.Substring((Int32)position, segment.Length));
         }
     }
 
-    protected static ISearch<Char, String> SearchFor(params String[] patterns) => new TSearch() { patterns }.Build();
+    private static ISearch<Char, String> SearchFor(params String[] patterns) => new TSearch() { patterns }.Build();
 
-    protected static IEnumerable<String> Result(params String[] result) => result;
+    private static IEnumerable<String> Result(params String[] result) => result;
 }

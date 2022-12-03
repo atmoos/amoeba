@@ -9,7 +9,7 @@ public static class Extensions
     public static void Add<TAlphabet, TText>(this ISearchBuilder<TAlphabet, TText> builder, IEnumerable<TText> searchTerms)
         where TText : IEnumerable<TAlphabet>
     {
-        builder.Add<TAlphabet, TText, TText>(searchTerms.Select(t => (t, t)));
+        builder.Add(searchTerms.Select(t => (t, t)));
     }
     public static void Add<TAlphabet, TText, TSearchOutput>(this ISearchBuilder<TAlphabet, TSearchOutput> builder, IEnumerable<(TText, TSearchOutput)> searchTerms)
         where TText : IEnumerable<TAlphabet>
@@ -35,12 +35,12 @@ public static class Extensions
         where TText : IEnumerable<TAlphabet>
         where TSearchOutput : ICollection<TAlphabet>
     {
-        return search.SearchForEndIndices<TAlphabet, TText, TSearchOutput>(inputStream).Shift<TAlphabet, TSearchOutput>();
+        return search.SearchForEndIndices(inputStream).Shift<TAlphabet, TSearchOutput>();
     }
     public static IEnumerable<(UInt64 position, TSearchOutput match)> SearchForStartIndices<TAlphabet, TText, TSearchOutput>(this ISearch<TAlphabet, TSearchOutput> search, TText inputStream, Func<TSearchOutput, UInt64> length)
         where TText : IEnumerable<TAlphabet>
     {
-        return search.SearchForEndIndices<TAlphabet, TText, TSearchOutput>(inputStream).Shift(length);
+        return search.SearchForEndIndices(inputStream).Shift(length);
     }
     public static IEnumerable<(UInt64 position, TSearchOutput match)> SearchForEndIndices<TAlphabet, TText, TSearchOutput>(this ISearch<TAlphabet, TSearchOutput> search, TText inputStream)
         where TText : IEnumerable<TAlphabet>
