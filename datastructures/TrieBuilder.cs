@@ -1,61 +1,56 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 
 namespace datastructures;
 
-public sealed class TrieBuilder<TCharacter, TValue> : ITrieBuilder<TCharacter, TValue>, ITrie<TCharacter, TValue>
+public sealed class TrieBuilder<TCharacter> : ITrieBuilder<TCharacter>, ITrie<TCharacter>
     where TCharacter : notnull
 {
     private Int32 size;
     private readonly Node root = Node.Root();
-    private readonly Dictionary<Node, TValue> values = new();
     public Node Root => this.root;
     public Int32 Size => this.size;
-    public Int32 Count => this.values.Count;
-    public TValue this[IEnumerable<TCharacter> key]
-    {
-        get {
-            if (TryGetValue(key, out var value)) {
-                return value;
-            }
-            String keyString = String.Join(String.Empty, key);
-            throw new KeyNotFoundException($"Key '{keyString}' not found.");
-        }
-    }
-
-    public void Add(IEnumerable<TCharacter> key, TValue value) => this.values[AddKey(key)] = value;
-    public Boolean Contains(IEnumerable<TCharacter> key) => TryGetValue(key, out _);
-    private Node AddKey(IEnumerable<TCharacter> key)
-    {
-        Node node = this.root;
-        foreach (var label in key) {
-            node = node.Add(label, ref this.size);
-        }
-        return node;
-    }
-    public Boolean TryGetValue(IEnumerable<TCharacter> key, [NotNullWhen(true)] out TValue? value)
+    public Int32 Count { get; private set; }
+    public void Add(IEnumerable<TCharacter> value) => AddKey(value);
+    public Boolean Contains(IEnumerable<TCharacter> key)
     {
         var child = this.root;
         foreach (var label in key) {
             if ((child = child.Next(in label)) == null) {
-                value = default;
                 return false;
             }
         }
-        return this.values.TryGetValue(child, out value!);
+        return true;
     }
-
-    public IEnumerator<(TCharacter[] key, TValue value)> GetEnumerator()
+    private Node AddKey(IEnumerable<TCharacter> key)
     {
-        throw new NotImplementedException();
+        (Node node, TCharacter label)? shift = null;
+        foreach (var label in key) {
+            if (shift is (Node, TCharacter) prev) {
+                var next = prev.node.Add(prev.label, ref this.size);
+                shift = (next, label);
+                continue;
+            }
+            shift = (this.root, label);
+        }
+        if (shift is (Node, TCharacter) end) {
+            var prevSize = this.size;
+            var tailMark = end.node.AddEnd(end.label, ref this.size);
+            if (this.size > prevSize) {
+                this.Count++;
+            }
+            return tailMark;
+        }
+        return this.root;
     }
 
-    public ITrie<TCharacter, TValue> Build()
+    public ITrie<TCharacter> Build()
     {
         return this; // ToDo: Add compression!
     }
+
+    public IEnumerator<TCharacter[]> GetEnumerator() => this.root.DepthFirst(new List<TCharacter>()).GetEnumerator();
 
     public sealed class Node : IEnumerable<KeyValuePair<TCharacter, Node>>
     {
@@ -88,7 +83,20 @@ public sealed class TrieBuilder<TCharacter, TValue> : ITrieBuilder<TCharacter, T
             counter++;
             return this.children[label] = new Node(true);
         }
+
         public Node? Next(in TCharacter label) => this.children.TryGetValue(label, out var child) ? child : null;
+
+        public IEnumerable<TCharacter[]> DepthFirst(List<TCharacter> parent)
+        {
+            if (this.MarksEndOfWord) {
+                yield return parent.ToArray();
+            }
+            foreach (var (label, child) in this.children) {
+                foreach (var word in child.DepthFirst(new List<TCharacter>(parent) { label })) {
+                    yield return word;
+                }
+            }
+        }
 
         public override String ToString()
         {
