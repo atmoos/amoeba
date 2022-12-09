@@ -7,6 +7,7 @@ namespace datastructures;
 
 public interface ITrie<TCharacter> : IEnumerable<TCharacter[]>
 {
+    Node Root { get; }
     Int32 Size { get; }
     Int32 Count { get; }
     Boolean Contains(IEnumerable<TCharacter> key);

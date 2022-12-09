@@ -6,10 +6,11 @@ namespace datastructures;
 public class Trie<TCharacter> : ITrie<TCharacter>
     where TCharacter : notnull
 {
-    private readonly Node root;
+    private readonly ArrayNode root;
+    public Node Root => this.root;
     public required Int32 Size { get; init; }
     public required Int32 Count { get; init; }
-    private Trie(Trie<TCharacter>.Node root) => this.root = root;
+    private Trie(Trie<TCharacter>.ArrayNode root) => this.root = root;
     public Boolean Contains(IEnumerable<TCharacter> key)
     {
         using var characters = key.GetEnumerator();
@@ -20,25 +21,23 @@ public class Trie<TCharacter> : ITrie<TCharacter>
 
     internal static Trie<TCharacter> Compress(TrieBuilder<TCharacter> trie)
     {
-        return new(Node.Compress(trie.Root, trie.Count)) { Count = trie.Count, Size = trie.Size };
+        return new(ArrayNode.Compress(trie.RecursionRoot, trie.Count)) { Count = trie.Count, Size = trie.Size };
     }
 
-    private sealed class Node
+    private sealed class ArrayNode : Node
     {
         private readonly TCharacter[] prefix;
-        private readonly Dictionary<TCharacter, Node> children;
-        public Boolean MarksEndOfWord { get; } = false;
-        private Node(Int32 childCount)
+        private readonly Dictionary<TCharacter, ArrayNode> children;
+        public override Int32 Count => this.children.Count;
+        private ArrayNode(Int32 childCount)
         {
             this.prefix = Array.Empty<TCharacter>();
-            this.MarksEndOfWord = false;
-            this.children = new Dictionary<TCharacter, Node>(childCount);
+            this.children = new Dictionary<TCharacter, ArrayNode>(childCount);
         }
-        private Node(TCharacter[] prefix, Int32 childCount, Boolean isEndOfWord)
+        private ArrayNode(TCharacter[] prefix, Int32 childCount)
         {
             this.prefix = prefix;
-            this.MarksEndOfWord = isEndOfWord;
-            this.children = new Dictionary<TCharacter, Node>(childCount);
+            this.children = new Dictionary<TCharacter, ArrayNode>(childCount);
         }
 
         internal Boolean Contains(IEnumerator<TCharacter> characters, IEqualityComparer<TCharacter> comparer)
@@ -58,11 +57,17 @@ public class Trie<TCharacter> : ITrie<TCharacter>
             // if, however, we can no longer move and have come this far, the characters have all matched :-)
             return !move;
         }
+        public override String ToString(String wordMark)
+        {
+            String siblings = String.Join(",", this.prefix);
+            String children = String.Join(";", this.children.Keys);
+            return $"({siblings})[{children}]{wordMark}";
+        }
 
         public IEnumerable<TCharacter[]> DepthFirst(List<TCharacter> prefix)
         {
             prefix.AddRange(this.prefix);
-            if (this.MarksEndOfWord) {
+            if (this.EndOfWord) {
                 yield return prefix.ToArray();
             }
             foreach (var (label, child) in this.children) {
@@ -72,17 +77,19 @@ public class Trie<TCharacter> : ITrie<TCharacter>
             }
         }
 
-        public static Node Compress(TrieBuilder<TCharacter>.Node root, Int32 count)
+        public override IEnumerator<Node> GetEnumerator() => this.children.Values.GetEnumerator();
+
+        public static ArrayNode Compress(TrieBuilder<TCharacter>.RecursiveNode root, Int32 count)
         {
-            var queue = new Queue<Node>();
-            var compressed = new Node(root.Count);
+            var queue = new Queue<ArrayNode>();
+            var compressed = new ArrayNode(root.Count);
             queue.Enqueue(compressed);
-            var map = new Map<Node, TrieBuilder<TCharacter>.Node>(count) { [compressed] = root };
+            var map = new Map<ArrayNode, TrieBuilder<TCharacter>.RecursiveNode>(count) { [compressed] = root };
             while (queue.TryDequeue(out var node)) {
                 var original = map[node] ?? throw new InvalidOperationException("Parent not found!");
-                foreach (var (label, child) in original) {
+                foreach (var (label, child) in original.Children) {
                     var (prefix, leaf) = child.Compress();
-                    var compacted = node.children[label] = new Node(prefix, leaf.Count, leaf.MarksEndOfWord);
+                    var compacted = node.children[label] = new ArrayNode(prefix, leaf.Count) { EndOfWord = leaf.EndOfWord };
                     map[compacted] = leaf;
                     queue.Enqueue(compacted);
                 }
