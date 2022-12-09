@@ -6,15 +6,16 @@ namespace datastructures;
 public class Trie<TCharacter> : ITrie<TCharacter>
     where TCharacter : notnull
 {
+    private static readonly IEqualityComparer<TCharacter> comparer = EqualityComparer<TCharacter>.Default;
     private readonly ArrayNode root;
-    public Node Root => this.root;
+    public Node<TCharacter> Root => this.root;
     public required Int32 Size { get; init; }
     public required Int32 Count { get; init; }
     private Trie(Trie<TCharacter>.ArrayNode root) => this.root = root;
     public Boolean Contains(IEnumerable<TCharacter> key)
     {
         using var characters = key.GetEnumerator();
-        return this.root.Contains(characters, EqualityComparer<TCharacter>.Default);
+        return this.root.Contains(characters);
     }
 
     public IEnumerator<TCharacter[]> GetEnumerator() => this.root.DepthFirst(new List<TCharacter>()).GetEnumerator();
@@ -24,7 +25,7 @@ public class Trie<TCharacter> : ITrie<TCharacter>
         return new(ArrayNode.Compress(trie.RecursionRoot, trie.Count)) { Count = trie.Count, Size = trie.Size };
     }
 
-    private sealed class ArrayNode : Node
+    private sealed class ArrayNode : Node<TCharacter>
     {
         private readonly TCharacter[] prefix;
         private readonly Dictionary<TCharacter, ArrayNode> children;
@@ -39,8 +40,15 @@ public class Trie<TCharacter> : ITrie<TCharacter>
             this.prefix = prefix;
             this.children = new Dictionary<TCharacter, ArrayNode>(childCount);
         }
+        public override IState<TCharacter> Walk() => new State(this);
 
-        internal Boolean Contains(IEnumerator<TCharacter> characters, IEqualityComparer<TCharacter> comparer)
+        public override String ToString(String wordMark)
+        {
+            String siblings = String.Join(",", this.prefix);
+            String children = String.Join(";", this.children.Keys);
+            return $"({siblings})[{children}]{wordMark}";
+        }
+        internal Boolean Contains(IEnumerator<TCharacter> characters)
         {
             Boolean move;
             Int32 count = 0;
@@ -50,18 +58,12 @@ public class Trie<TCharacter> : ITrie<TCharacter>
                 }
             }
             if (move && this.children.TryGetValue(characters.Current, out var child)) {
-                return child.Contains(characters, comparer);
+                return child.Contains(characters);
             }
             // if we can still move but there is no more child to traverse into, the characters
             // are not fully part of the trie: return false.
             // if, however, we can no longer move and have come this far, the characters have all matched :-)
             return !move;
-        }
-        public override String ToString(String wordMark)
-        {
-            String siblings = String.Join(",", this.prefix);
-            String children = String.Join(";", this.children.Keys);
-            return $"({siblings})[{children}]{wordMark}";
         }
 
         public IEnumerable<TCharacter[]> DepthFirst(List<TCharacter> prefix)
@@ -77,7 +79,15 @@ public class Trie<TCharacter> : ITrie<TCharacter>
             }
         }
 
-        public override IEnumerator<Node> GetEnumerator() => this.children.Values.GetEnumerator();
+        public override IEnumerator<(TCharacter label, Node<TCharacter> node)> GetEnumerator()
+        {
+            foreach (var label in this.prefix) {
+                yield return (label, this);
+            }
+            foreach (var (label, child) in this.children) {
+                yield return (label, child);
+            }
+        }
 
         public static ArrayNode Compress(TrieBuilder<TCharacter>.RecursiveNode root, Int32 count)
         {
@@ -95,6 +105,26 @@ public class Trie<TCharacter> : ITrie<TCharacter>
                 }
             }
             return compressed;
+        }
+        private sealed class State : IState<TCharacter>
+        {
+            private Int32 index = 0;
+            private ArrayNode current;
+            public State(ArrayNode current) => this.current = current;
+            public Node<TCharacter>? Next(in TCharacter label)
+            {
+                if (this.index < this.current.prefix.Length) {
+                    if (comparer.Equals(this.current.prefix[++this.index], label)) {
+                        return this.current;
+                    }
+                    return null;
+                }
+                if (this.current.children.TryGetValue(label, out var next) && next != null) {
+                    this.index = 0;
+                    return this.current = next;
+                }
+                return null;
+            }
         }
     }
 }

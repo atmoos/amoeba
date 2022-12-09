@@ -1,18 +1,17 @@
 using System.Collections.Generic;
 
 namespace datastructures;
-internal interface IBuilder<out T>
+
+public interface IBuilder<out T>
 {
-    public T Build();
+    T Build();
 }
 
-public interface ITrieBuilder<TCharacter>
+public interface ITrieBuilder<TCharacter> : IBuilder<ITrie<TCharacter>>
 {
-    public void Add(IEnumerable<TCharacter> value);
-    ITrie<TCharacter> Build();
+    Node<TCharacter> AddKey(IEnumerable<TCharacter> value);
 }
-public interface ITrieBuilder<TCharacter, TValue>
+public interface ITrieBuilder<TCharacter, TValue> : IBuilder<ITrie<TCharacter, TValue>>
 {
     public void Add(IEnumerable<TCharacter> key, TValue value);
-    ITrie<TCharacter, TValue> Build();
 }

@@ -5,6 +5,8 @@ namespace datastructures;
 
 public static class Extensions
 {
+
+    public static void Add<TCharacter>(this ITrieBuilder<TCharacter> trie, IEnumerable<TCharacter> value) => trie.AddKey(value);
     public static void Add<TCharacter, TValue>(this ITrieBuilder<TCharacter> trie, IEnumerable<TValue> values)
         where TValue : IEnumerable<TCharacter>
     {

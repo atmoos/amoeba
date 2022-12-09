@@ -10,22 +10,21 @@ public sealed class TrieBuilder<TCharacter> : ITrieBuilder<TCharacter>, ITrie<TC
 {
     private Int32 size;
     private readonly RecursiveNode root = RecursiveNode.Root();
-    public Node Root => this.root;
+    public Node<TCharacter> Root => this.root;
     internal RecursiveNode RecursionRoot => this.root;
     public Int32 Size => this.size;
     public Int32 Count { get; private set; }
-    public void Add(IEnumerable<TCharacter> value) => AddKey(value);
     public Boolean Contains(IEnumerable<TCharacter> key)
     {
         var child = this.root;
         foreach (var label in key) {
-            if ((child = child.Next(in label)) == null) {
+            if ((child = child.Recurse(in label)) == null) {
                 return false;
             }
         }
         return true;
     }
-    private RecursiveNode AddKey(IEnumerable<TCharacter> key)
+    public Node<TCharacter> AddKey(IEnumerable<TCharacter> key)
     {
         (RecursiveNode node, TCharacter label)? shift = null;
         foreach (var label in key) {
@@ -54,7 +53,7 @@ public sealed class TrieBuilder<TCharacter> : ITrieBuilder<TCharacter>, ITrie<TC
 
     public IEnumerator<TCharacter[]> GetEnumerator() => this.root.DepthFirst(new List<TCharacter>()).GetEnumerator();
 
-    internal sealed class RecursiveNode : Node
+    internal sealed class RecursiveNode : Node<TCharacter>, IState<TCharacter>
     {
         private readonly Dictionary<TCharacter, RecursiveNode> children;
         public override Int32 Count => this.children.Count;
@@ -80,7 +79,9 @@ public sealed class TrieBuilder<TCharacter> : ITrieBuilder<TCharacter>, ITrie<TC
             counter++;
             return this.children[label] = new RecursiveNode { EndOfWord = true };
         }
-        public RecursiveNode? Next(in TCharacter label) => this.children.TryGetValue(label, out var child) ? child : null;
+        public override IState<TCharacter> Walk() => this;
+        public Node<TCharacter>? Next(in TCharacter label) => Recurse(in label);
+        internal RecursiveNode? Recurse(in TCharacter label) => this.children.TryGetValue(label, out var child) ? child : null;
         public IEnumerable<TCharacter[]> DepthFirst(List<TCharacter> prefix)
         {
             if (this.EndOfWord) {
@@ -113,7 +114,13 @@ public sealed class TrieBuilder<TCharacter> : ITrieBuilder<TCharacter>, ITrie<TC
             return $"[{children}]{wordMark}";
         }
 
-        public override IEnumerator<Node> GetEnumerator() => this.children.Values.GetEnumerator();
+        public override IEnumerator<(TCharacter label, Node<TCharacter> node)> GetEnumerator()
+        {
+            foreach (var (label, child) in this.children) {
+                yield return (label, child);
+            }
+        }
+
         internal static RecursiveNode Root() => new();
     }
 }
