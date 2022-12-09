@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace datastructures;
 
@@ -9,7 +10,7 @@ public sealed class TrieBuilder<TCharacter> : ITrieBuilder<TCharacter>, ITrie<TC
 {
     private Int32 size;
     private readonly Node root = Node.Root();
-    public Node Root => this.root;
+    internal Node Root => this.root;
     public Int32 Size => this.size;
     public Int32 Count { get; private set; }
     public void Add(IEnumerable<TCharacter> value) => AddKey(value);
@@ -47,12 +48,12 @@ public sealed class TrieBuilder<TCharacter> : ITrieBuilder<TCharacter>, ITrie<TC
 
     public ITrie<TCharacter> Build()
     {
-        return this; // ToDo: Add compression!
+        return Trie<TCharacter>.Compress(this);
     }
 
     public IEnumerator<TCharacter[]> GetEnumerator() => this.root.DepthFirst(new List<TCharacter>()).GetEnumerator();
 
-    public sealed class Node : IEnumerable<KeyValuePair<TCharacter, Node>>
+    internal sealed class Node : IEnumerable<KeyValuePair<TCharacter, Node>>
     {
         private readonly Dictionary<TCharacter, Node> children;
         public Boolean MarksEndOfWord { get; } = false;
@@ -86,16 +87,30 @@ public sealed class TrieBuilder<TCharacter> : ITrieBuilder<TCharacter>, ITrie<TC
 
         public Node? Next(in TCharacter label) => this.children.TryGetValue(label, out var child) ? child : null;
 
-        public IEnumerable<TCharacter[]> DepthFirst(List<TCharacter> parent)
+        public IEnumerable<TCharacter[]> DepthFirst(List<TCharacter> prefix)
         {
             if (this.MarksEndOfWord) {
-                yield return parent.ToArray();
+                yield return prefix.ToArray();
             }
             foreach (var (label, child) in this.children) {
-                foreach (var word in child.DepthFirst(new List<TCharacter>(parent) { label })) {
+                foreach (var word in child.DepthFirst(new List<TCharacter>(prefix) { label })) {
                     yield return word;
                 }
             }
+        }
+        public (TCharacter[] prefix, Node leaf) Compress()
+        {
+            if (this.MarksEndOfWord || this.children.Count > 1) {
+                return (Array.Empty<TCharacter>(), this);
+            }
+            var children = this.children;
+            var (label, onlyChild) = children.Single();
+            var prefix = new List<TCharacter>() { label };
+            while (!onlyChild.MarksEndOfWord && (children = onlyChild.children).Count == 1) {
+                (label, onlyChild) = children.Single();
+                prefix.Add(label);
+            }
+            return (prefix.ToArray(), onlyChild);
         }
 
         public override String ToString()

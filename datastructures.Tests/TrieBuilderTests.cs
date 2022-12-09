@@ -3,9 +3,9 @@ using Xunit;
 
 namespace datastructures.Tests;
 
-public class TrieTests : ITrieTests
+public class TrieBuilderTests : ITrieTests
 {
-    private readonly ITrieTests tester = new TrieTester(words => new TrieBuilder<Char> { words }.Build());
+    private readonly ITrieTests tester = new TrieTester(words => new TrieBuilder<Char> { words });
 
     [Fact]
     public void AllDistinctWordsAreContainedWithinTrie() => this.tester.AllDistinctWordsAreContainedWithinTrie();
