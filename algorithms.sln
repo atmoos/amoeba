@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "datastructures", "datastruc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "datastructures.tests", "datastructures.tests\datastructures.tests.csproj", "{2E4B2E10-3F7F-4015-9FDA-EFD6B2FFED10}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "datastructures.benchmark", "datastructures.benchmark\datastructures.benchmark.csproj", "{EBCD4067-8459-4364-B970-DA3D1F2B405B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -86,5 +88,17 @@ Global
 		{2E4B2E10-3F7F-4015-9FDA-EFD6B2FFED10}.Release|x64.Build.0 = Release|Any CPU
 		{2E4B2E10-3F7F-4015-9FDA-EFD6B2FFED10}.Release|x86.ActiveCfg = Release|Any CPU
 		{2E4B2E10-3F7F-4015-9FDA-EFD6B2FFED10}.Release|x86.Build.0 = Release|Any CPU
+		{EBCD4067-8459-4364-B970-DA3D1F2B405B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EBCD4067-8459-4364-B970-DA3D1F2B405B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EBCD4067-8459-4364-B970-DA3D1F2B405B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EBCD4067-8459-4364-B970-DA3D1F2B405B}.Debug|x64.Build.0 = Debug|Any CPU
+		{EBCD4067-8459-4364-B970-DA3D1F2B405B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EBCD4067-8459-4364-B970-DA3D1F2B405B}.Debug|x86.Build.0 = Debug|Any CPU
+		{EBCD4067-8459-4364-B970-DA3D1F2B405B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EBCD4067-8459-4364-B970-DA3D1F2B405B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EBCD4067-8459-4364-B970-DA3D1F2B405B}.Release|x64.ActiveCfg = Release|Any CPU
+		{EBCD4067-8459-4364-B970-DA3D1F2B405B}.Release|x64.Build.0 = Release|Any CPU
+		{EBCD4067-8459-4364-B970-DA3D1F2B405B}.Release|x86.ActiveCfg = Release|Any CPU
+		{EBCD4067-8459-4364-B970-DA3D1F2B405B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
