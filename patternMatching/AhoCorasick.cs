@@ -19,7 +19,7 @@ public sealed class AhoCorasick<TAlphabet, TOnMatch> : ISearchBuilder<TAlphabet,
     public ISearch<TAlphabet, TOnMatch> Build()
     {
         var (matches, map) = CompileMatchesMap();
-        return new TrieSearch(State.Compile(in this.trie, in map), matches);
+        return new TrieSearch(State.Compile(this.trie, in map), matches);
     }
     private (TOnMatch[] matches, Dictionary<Node<TAlphabet>, Int32> map) CompileMatchesMap()
     {
@@ -82,7 +82,7 @@ public sealed class AhoCorasick<TAlphabet, TOnMatch> : ISearchBuilder<TAlphabet,
         }
 
         public static State Root(in Int32 capacity) => new(capacity);
-        public static State Compile(in TrieBuilder<TAlphabet> trie, in Dictionary<Node<TAlphabet>, Int32> indexMap)
+        public static State Compile(in ITrie<TAlphabet> trie, in Dictionary<Node<TAlphabet>, Int32> indexMap)
         {
             var trieRoot = trie.Root;
             var rootState = Root(trieRoot.Count);
@@ -95,25 +95,25 @@ public sealed class AhoCorasick<TAlphabet, TOnMatch> : ISearchBuilder<TAlphabet,
                 breadthFirstQueue.Enqueue(child);
             }
             while (breadthFirstQueue.TryDequeue(out var node)) {
-                var current = nodes[node];
-                var currentSuffix = suffixes[node];
+                var current = nodes[node] ?? rootState;
+                var currentSuffix = suffixes[node] ?? trieRoot;
                 foreach (var (letter, child) in node) {
-                    Node<TAlphabet> probe;
+                    Node<TAlphabet>? probe;
                     var suffix = currentSuffix;
                     var state = suffix.Walk();
                     while ((probe = state.Next(in letter)) == null && suffix != trieRoot) {
-                        suffix = suffixes[suffix];
+                        suffix = suffixes[suffix] ?? trieRoot;
                         state = suffix.Walk();
                     }
                     var output = suffix = suffixes[child] = probe ?? trieRoot;
                     while (!output.EndOfWord && output != trieRoot) {
-                        output = suffixes[output];
+                        output = suffixes[output] ?? trieRoot;
                     }
                     current.next[letter] = nodes[child] = Create(in indexMap, in child, nodes[output], suffix.Count);
                     breadthFirstQueue.Enqueue(child);
                 }
                 // Flatten the trie such that each state has all next states, given a known letter.
-                current.Merge(currentSuffix == trieRoot ? rootState : nodes[currentSuffix]);
+                current.Merge(currentSuffix == trieRoot ? rootState : nodes[currentSuffix] ?? rootState);
             }
             return rootState;
         }
