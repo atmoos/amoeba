@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using datastructures;
+﻿using System.Collections;
+using Data.Structures;
 
 namespace patternMatching;
 

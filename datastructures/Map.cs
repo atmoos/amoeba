@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace datastructures;
+﻿namespace Data.Structures;
 
 public sealed class Map<TKey, TValue>
     where TKey : notnull

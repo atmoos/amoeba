@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace patternMatching.Naive;
+﻿namespace patternMatching.Naive;
 
 public sealed class MultiPatternSearch<TAlphabet, TMatch> : ISearchBuilder<TAlphabet, TMatch>
     where TAlphabet : IEquatable<TAlphabet>

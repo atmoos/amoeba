@@ -1,8 +1,8 @@
-using System;
+﻿using System;
 using System.Linq;
 using Xunit;
 
-namespace datastructures.Tests;
+namespace Data.Structures.Tests;
 
 public interface ITrieTests
 {

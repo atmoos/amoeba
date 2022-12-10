@@ -1,4 +1,4 @@
-namespace datastructures;
+﻿namespace Data.Structures;
 
 public interface IState<TLabel>
 {

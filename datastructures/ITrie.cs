@@ -1,9 +1,7 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 
-namespace datastructures;
+namespace Data.Structures;
 
 public interface ITrie<TCharacter> : IEnumerable<TCharacter[]>
 {
@@ -12,7 +10,7 @@ public interface ITrie<TCharacter> : IEnumerable<TCharacter[]>
     Node<TCharacter> Root { get; }
     Boolean Contains(IEnumerable<TCharacter> key);
 
-    IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
 public interface ITrie<TCharacter, TValue> : ITrie<TCharacter>, IEnumerable<(TCharacter[] key, TValue value)>
 {

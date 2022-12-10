@@ -1,8 +1,6 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections;
 
-namespace datastructures;
+namespace Data.Structures;
 
 public abstract class Node<TLabel> : IEnumerable<(TLabel label, Node<TLabel> node)>
 {

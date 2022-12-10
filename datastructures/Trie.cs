@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
-
-namespace datastructures;
+﻿namespace Data.Structures;
 
 public class Trie<TCharacter> : ITrie<TCharacter>
     where TCharacter : notnull

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace datastructures;
+﻿namespace Data.Structures;
 
 public sealed class TrieBuilder<TCharacter> : ITrieBuilder<TCharacter>, ITrie<TCharacter>
     where TCharacter : notnull

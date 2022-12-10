@@ -1,7 +1,7 @@
 ﻿using System;
 using Xunit;
 
-namespace datastructures.Tests;
+namespace Data.Structures.Tests;
 
 public class TrieBuilderTests : ITrieTests
 {
