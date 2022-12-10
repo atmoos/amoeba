@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace patternMatching;
+﻿namespace patternMatching;
 
 public interface ISearch<TAlphabet, TSearchOutput>
 {

@@ -1,16 +1,15 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using datastructures;
+﻿using System.Collections;
+using Data.Structures;
 
 namespace patternMatching;
 
 // This implementation follows the following tutorial:
 // https://iq.opengenus.org/aho-corasick-algorithm/
 public sealed class AhoCorasick<TAlphabet, TOnMatch> : ISearchBuilder<TAlphabet, TOnMatch>
+    where TAlphabet : notnull
 {
-    private readonly Trie<TAlphabet> trie = new();
-    private readonly Dictionary<Trie<TAlphabet>.Node, TOnMatch> matchValues = new();
+    private readonly TrieBuilder<TAlphabet> trie = new();
+    private readonly Dictionary<Node<TAlphabet>, TOnMatch> matchValues = new();
     public void Add(IEnumerable<TAlphabet> pattern, in TOnMatch onMatch)
     {
         this.matchValues[this.trie.AddKey(pattern)] = onMatch;
@@ -18,13 +17,13 @@ public sealed class AhoCorasick<TAlphabet, TOnMatch> : ISearchBuilder<TAlphabet,
     public ISearch<TAlphabet, TOnMatch> Build()
     {
         var (matches, map) = CompileMatchesMap();
-        return new TrieSearch(State.Compile(in this.trie, in map), matches);
+        return new TrieSearch(State.Compile(this.trie, in map), matches);
     }
-    private (TOnMatch[] matches, Dictionary<Trie<TAlphabet>.Node, Int32> map) CompileMatchesMap()
+    private (TOnMatch[] matches, Dictionary<Node<TAlphabet>, Int32> map) CompileMatchesMap()
     {
         var index = 0;
         var matches = new TOnMatch[this.matchValues.Count];
-        var map = new Dictionary<Trie<TAlphabet>.Node, Int32>(matches.Length);
+        var map = new Dictionary<Node<TAlphabet>, Int32>(matches.Length);
         foreach (var (node, match) in this.matchValues) {
             matches[index] = match;
             map[node] = index++;
@@ -81,43 +80,45 @@ public sealed class AhoCorasick<TAlphabet, TOnMatch> : ISearchBuilder<TAlphabet,
         }
 
         public static State Root(in Int32 capacity) => new(capacity);
-        public static State Compile(in Trie<TAlphabet> trie, in Dictionary<Trie<TAlphabet>.Node, Int32> indexMap)
+        public static State Compile(in ITrie<TAlphabet> trie, in Dictionary<Node<TAlphabet>, Int32> indexMap)
         {
             var trieRoot = trie.Root;
             var rootState = Root(trieRoot.Count);
-            var breadthFirstQueue = new Queue<Trie<TAlphabet>.Node>();
-            var nodes = new Map<Trie<TAlphabet>.Node, State>(trie.Size); // do not add root!
-            var suffixes = new Map<Trie<TAlphabet>.Node, Trie<TAlphabet>.Node>(trie.Size);
+            var breadthFirstQueue = new Queue<Node<TAlphabet>>();
+            var nodes = new Map<Node<TAlphabet>, State>(trie.Size); // do not add root!
+            var suffixes = new Map<Node<TAlphabet>, Node<TAlphabet>>(trie.Size);
             foreach (var (letter, child) in trieRoot) {
                 suffixes[child] = trieRoot;
                 rootState.next[letter] = nodes[child] = Create(in indexMap, in child, null, trieRoot.Count);
                 breadthFirstQueue.Enqueue(child);
             }
             while (breadthFirstQueue.TryDequeue(out var node)) {
-                var current = nodes[node];
-                var currentSuffix = suffixes[node];
+                var current = nodes[node] ?? rootState;
+                var currentSuffix = suffixes[node] ?? trieRoot;
                 foreach (var (letter, child) in node) {
-                    Trie<TAlphabet>.Node probe;
+                    Node<TAlphabet>? probe;
                     var suffix = currentSuffix;
-                    while ((probe = suffix.Next(in letter)) == null && suffix != trieRoot) {
-                        suffix = suffixes[suffix];
+                    var state = suffix.Walk();
+                    while ((probe = state.Next(in letter)) == null && suffix != trieRoot) {
+                        suffix = suffixes[suffix] ?? trieRoot;
+                        state = suffix.Walk();
                     }
                     var output = suffix = suffixes[child] = probe ?? trieRoot;
-                    while (!output.MarksEndOfWord && output != trieRoot) {
-                        output = suffixes[output];
+                    while (!output.EndOfWord && output != trieRoot) {
+                        output = suffixes[output] ?? trieRoot;
                     }
                     current.next[letter] = nodes[child] = Create(in indexMap, in child, nodes[output], suffix.Count);
                     breadthFirstQueue.Enqueue(child);
                 }
                 // Flatten the trie such that each state has all next states, given a known letter.
-                current.Merge(currentSuffix == trieRoot ? rootState : nodes[currentSuffix]);
+                current.Merge(currentSuffix == trieRoot ? rootState : nodes[currentSuffix] ?? rootState);
             }
             return rootState;
         }
-        private static State Create(in Dictionary<Trie<TAlphabet>.Node, Int32> indexMap, in Trie<TAlphabet>.Node node, in State? output, in Int32 suffixCapacity)
+        private static State Create(in Dictionary<Node<TAlphabet>, Int32> indexMap, in Node<TAlphabet> node, in State? output, in Int32 suffixCapacity)
         {
             var initialCapacity = node.Count + (Int32)(0.33 * Math.Sqrt(node.Count * suffixCapacity)); // allow an excess of one third the geometric mean.
-            return node.MarksEndOfWord ? new State(indexMap[node], output, initialCapacity) : new State(output, initialCapacity);
+            return node.EndOfWord ? new State(indexMap[node], output, initialCapacity) : new State(output, initialCapacity);
         }
     }
 }

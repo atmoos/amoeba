@@ -1,120 +1,127 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
+﻿namespace Data.Structures;
 
-namespace datastructures;
-
-public sealed class Trie<TLabel> : IEnumerable
+public class Trie<TCharacter> : ITrie<TCharacter>
+    where TCharacter : notnull
 {
-    private Int32 size;
-    private readonly Node root = Node.Root();
-    public Node Root => this.root;
-    public Int32 Size => this.size;
-    public void Add(IEnumerable<TLabel> key) => AddKey(key);
-    public void Add<TKey>(IEnumerable<TKey> keys)
-        where TKey : IEnumerable<TLabel>
+    private static readonly IEqualityComparer<TCharacter> comparer = EqualityComparer<TCharacter>.Default;
+    private readonly ArrayNode root;
+    public Node<TCharacter> Root => this.root;
+    public required Int32 Size { get; init; }
+    public required Int32 Count { get; init; }
+    private Trie(Trie<TCharacter>.ArrayNode root) => this.root = root;
+    public Boolean Contains(IEnumerable<TCharacter> key)
     {
-        foreach (var key in keys) {
-            Add(key);
-        }
+        using var characters = key.GetEnumerator();
+        return this.root.Contains(characters);
     }
-    public Boolean Contains(IEnumerable<TLabel> key) => FindKey(key) != null;
-    public Node AddKey(IEnumerable<TLabel> key)
+
+    public IEnumerator<TCharacter[]> GetEnumerator() => this.root.DepthFirst(new List<TCharacter>()).GetEnumerator();
+
+    internal static Trie<TCharacter> Compress(TrieBuilder<TCharacter> trie)
     {
-        (Node node, TLabel label) next = (null, default);
-        foreach (var label in key) {
-            if (next.node == null) {
-                next = (this.root, label);
-                continue;
+        return new(ArrayNode.Compress(trie.RecursionRoot, trie.Count)) { Count = trie.Count, Size = trie.Size };
+    }
+
+    private sealed class ArrayNode : Node<TCharacter>
+    {
+        private readonly TCharacter[] prefix;
+        private readonly Dictionary<TCharacter, ArrayNode> children;
+        public override Int32 Count => this.children.Count;
+        private ArrayNode(Int32 childCount)
+        {
+            this.prefix = Array.Empty<TCharacter>();
+            this.children = new Dictionary<TCharacter, ArrayNode>(childCount);
+        }
+        private ArrayNode(TCharacter[] prefix, Int32 childCount)
+        {
+            this.prefix = prefix;
+            this.children = new Dictionary<TCharacter, ArrayNode>(childCount);
+        }
+        public override IState<TCharacter> Walk() => new State(this);
+
+        public override String ToString(String wordMark)
+        {
+            String siblings = String.Join(",", this.prefix);
+            String children = String.Join(";", this.children.Keys);
+            return $"({siblings})[{children}]{wordMark}";
+        }
+        internal Boolean Contains(IEnumerator<TCharacter> characters)
+        {
+            Boolean move;
+            Int32 count = 0;
+            while ((move = characters.MoveNext()) && count < this.prefix.Length) {
+                if (!comparer.Equals(characters.Current, this.prefix[count++])) {
+                    return false;
+                }
             }
-            next = (next.node.Add(next.label, ref this.size), label);
+            if (move && this.children.TryGetValue(characters.Current, out var child)) {
+                return child.Contains(characters);
+            }
+            // if we can still move but there is no more child to traverse into, the characters
+            // are not fully part of the trie: return false.
+            // if, however, we can no longer move and have come this far, the characters have all matched :-)
+            return !move;
         }
-        return next.node.AddEnd(next.label, ref this.size);
-    }
-    internal Node FindKey(IEnumerable<TLabel> key)
-    {
-        var child = this.root;
-        foreach (var label in key) {
-            if ((child = child.Next(in label)) == null) {
+
+        public IEnumerable<TCharacter[]> DepthFirst(List<TCharacter> prefix)
+        {
+            prefix.AddRange(this.prefix);
+            if (this.EndOfWord) {
+                yield return prefix.ToArray();
+            }
+            foreach (var (label, child) in this.children) {
+                foreach (var word in child.DepthFirst(new List<TCharacter>(prefix) { label })) {
+                    yield return word;
+                }
+            }
+        }
+
+        public override IEnumerator<(TCharacter label, Node<TCharacter> node)> GetEnumerator()
+        {
+            foreach (var label in this.prefix) {
+                yield return (label, this);
+            }
+            foreach (var (label, child) in this.children) {
+                yield return (label, child);
+            }
+        }
+
+        public static ArrayNode Compress(TrieBuilder<TCharacter>.RecursiveNode root, Int32 count)
+        {
+            var queue = new Queue<ArrayNode>();
+            var compressed = new ArrayNode(root.Count);
+            queue.Enqueue(compressed);
+            var map = new Map<ArrayNode, TrieBuilder<TCharacter>.RecursiveNode>(count) { [compressed] = root };
+            while (queue.TryDequeue(out var node)) {
+                var original = map[node] ?? throw new InvalidOperationException("Parent not found!");
+                foreach (var (label, child) in original.Children) {
+                    var (prefix, leaf) = child.Compress();
+                    var compacted = node.children[label] = new ArrayNode(prefix, leaf.Count) { EndOfWord = leaf.EndOfWord };
+                    map[compacted] = leaf;
+                    queue.Enqueue(compacted);
+                }
+            }
+            return compressed;
+        }
+        private sealed class State : IState<TCharacter>
+        {
+            private Int32 index = 0;
+            private ArrayNode current;
+            public State(ArrayNode current) => this.current = current;
+            public Node<TCharacter>? Next(in TCharacter label)
+            {
+                if (this.index < this.current.prefix.Length) {
+                    if (comparer.Equals(this.current.prefix[++this.index], label)) {
+                        return this.current;
+                    }
+                    return null;
+                }
+                if (this.current.children.TryGetValue(label, out var next) && next != null) {
+                    this.index = 0;
+                    return this.current = next;
+                }
                 return null;
             }
         }
-        return child;
-    }
-
-    public IEnumerable<IEnumerable<Node>> WalkBreadthFirst()
-    {
-        foreach (var row in BreadthFirst(this.root).GroupBy(e => e.level)) {
-            yield return row.Select(d => d.node);
-        }
-    }
-
-    private static IEnumerable<(Int32 level, Node node)> BreadthFirst(Node root)
-    {
-        var queue = new Queue<(Int32 level, Node node)>(root.Select(c => (1, c.Value)));
-        while (queue.TryDequeue(out var element)) {
-            var level = element.level + 1;
-            foreach (var (_, child) in element.node) {
-                queue.Enqueue((level, child));
-            }
-            yield return element;
-        }
-    }
-
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        // Implemented in order to enable the collection initialiser.
-        throw new NotImplementedException("This method is not meant to be called.");
-    }
-    public sealed class Node : IEnumerable<KeyValuePair<TLabel, Node>>
-    {
-        private readonly Dictionary<TLabel, Node> children;
-        public TLabel Label { get; }
-        public Boolean MarksEndOfWord { get; } = false;
-        public Int32 Count => this.children.Count;
-        private Node() => this.children = new Dictionary<TLabel, Node>();
-        private Node(TLabel label, Boolean isEndOfWord) : this() => (Label, MarksEndOfWord) = (label, isEndOfWord);
-        private Node(Node node, Boolean isEndOfWord)
-            : this()
-        {
-            Label = node.Label;
-            MarksEndOfWord = isEndOfWord;
-            this.children = node.children;
-        }
-        internal Node Add(in TLabel label, ref Int32 counter)
-        {
-            if (this.children.TryGetValue(label, out var child)) {
-                return child;
-            }
-            counter++;
-            return this.children[label] = new Node(label, false);
-        }
-        internal Node AddEnd(in TLabel label, ref Int32 counter)
-        {
-            if (this.children.TryGetValue(label, out var child)) {
-                if (child.MarksEndOfWord) {
-                    return child;
-                }
-                return this.children[label] = new Node(child, true);
-            }
-            counter++;
-            return this.children[label] = new Node(label, true);
-        }
-        public Node Next(in TLabel label) => this.children.TryGetValue(label, out var child) ? child : null;
-
-        public override String ToString()
-        {
-            String mark = String.Empty;
-            if (this.MarksEndOfWord) {
-                mark = this.children.Count == 0 ? "*" : "|*";
-            }
-            return $"{String.Join(";", this.children.Keys)}{mark}";
-        }
-        internal static Node Root() => new();
-
-        public IEnumerator<KeyValuePair<TLabel, Node>> GetEnumerator() => this.children.GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }
